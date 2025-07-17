@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  project-management-rabbitmq:
+    image: rabbitmq:3-management
+    container_name: project-management-rabbitmq
+    ports:
+      - "5673:5672"  # Changed left port to avoid conflict with old project
+      - "15673:15672" # Changed left port to avoid conflict with old project
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+
+
+  project-management-express:
+    build: .
+    depends_on:
+      - project-management-rabbitmq
+    env_file:
+      - .env
+    ports:
+      - "4002:4000" # Changed left port to avoid conflict with old project
+    volumes:
+      - .:/app
+    command: npm run dev
+
+
+
+
