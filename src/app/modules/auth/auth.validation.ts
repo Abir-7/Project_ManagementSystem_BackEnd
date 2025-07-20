@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { userRole } from "../../interface/auth.interface";
 
 export const zodCreateUserSchema = z.object({
   body: z
@@ -6,6 +7,7 @@ export const zodCreateUserSchema = z.object({
       fullName: z.string(),
       email: z.string().email(),
       password: z.string(),
+      role: z.enum([...userRole] as [(typeof userRole)[number]]),
     })
     .strict(),
 });

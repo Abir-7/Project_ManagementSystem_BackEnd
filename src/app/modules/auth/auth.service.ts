@@ -15,11 +15,13 @@ import { IUser } from "../users/user/user.interface";
 import mongoose from "mongoose";
 import { isTimeExpired } from "../../utils/helper/isTimeExpire";
 import { publishJob } from "../../rabbitMq/publisher";
+import { TUserRole } from "../../interface/auth.interface";
 
 const createUser = async (data: {
   email: string;
   fullName: string;
   password: string;
+  role: TUserRole;
 }): Promise<Partial<IUser>> => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -45,10 +47,11 @@ const createUser = async (data: {
     const userData = {
       email: data.email,
       password: hashedPassword,
+      role: data.role,
       authentication: { otp, expDate },
     };
 
-    const createdUser = await User.create([{ ...userData, role: "USER" }], {
+    const createdUser = await User.create([{ ...userData }], {
       session,
     });
 
