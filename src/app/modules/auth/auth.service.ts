@@ -14,7 +14,7 @@ import { appConfig } from "../../config";
 import { IUser } from "../users/user/user.interface";
 import mongoose from "mongoose";
 import { isTimeExpired } from "../../utils/helper/isTimeExpire";
-import { publishJob } from "../../rabbitMq/publisher";
+//import { publishJob } from "../../rabbitMq/publisher";
 import { TUserRole } from "../../interface/auth.interface";
 
 const createUser = async (data: {
@@ -41,14 +41,14 @@ const createUser = async (data: {
     }
 
     const hashedPassword = await getHashedPassword(data.password);
-    const otp = getOtp(4);
-    const expDate = getExpiryTime(10);
+    // const otp = getOtp(4);
+    // const expDate = getExpiryTime(10);
 
     const userData = {
       email: data.email,
       password: hashedPassword,
       role: data.role,
-      authentication: { otp, expDate },
+      authentication: { otp: null, expDate: null },
     };
 
     const createdUser = await User.create([{ ...userData }], {
@@ -62,11 +62,11 @@ const createUser = async (data: {
     };
     await UserProfile.create([userProfileData], { session });
 
-    await publishJob("emailQueue", {
-      to: data.email,
-      subject: "Email Verification Code",
-      body: otp.toString(),
-    });
+    // await publishJob("emailQueue", {
+    //   to: data.email,
+    //   subject: "Email Verification Code",
+    //   body: otp.toString(),
+    // });
 
     await session.commitTransaction();
     session.endSession();
