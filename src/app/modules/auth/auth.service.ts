@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import status from "http-status";
 import AppError from "../../errors/AppError";
@@ -15,14 +16,18 @@ import { IUser } from "../users/user/user.interface";
 import mongoose from "mongoose";
 import { isTimeExpired } from "../../utils/helper/isTimeExpire";
 //import { publishJob } from "../../rabbitMq/publisher";
-import { TUserRole } from "../../interface/auth.interface";
+import { TUserRole, userRoles } from "../../interface/auth.interface";
 
-const createUser = async (data: {
-  email: string;
-  fullName: string;
-  password: string;
-  role: TUserRole;
-}): Promise<Partial<IUser>> => {
+const createUser = async (
+  data: {
+    email: string;
+    fullName: string;
+    password: string;
+    role: TUserRole;
+  },
+  authRole: TUserRole,
+  userId: string
+): Promise<Partial<IUser>> => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -44,22 +49,37 @@ const createUser = async (data: {
     // const otp = getOtp(4);
     // const expDate = getExpiryTime(10);
 
+    if (authRole === userRoles.ADMIN && data.role !== userRoles.SUPERVISOR) {
+      throw new AppError(
+        status.BAD_REQUEST,
+        `ADMIN can only assign the ${userRoles.SUPERVISOR} role`
+      );
+    }
+
+    if (authRole === userRoles.SUPERVISOR && data.role !== userRoles.EMPLOYEE) {
+      throw new AppError(
+        status.BAD_REQUEST,
+        `SUPERVISOR can only assign the ${userRoles.EMPLOYEE} role`
+      );
+    }
+
     const userData = {
-      email: data.email,
+      email: data.email.toLowerCase(),
       password: hashedPassword,
       role: data.role,
       authentication: { otp: null, expDate: null },
+      addedBy: userId,
     };
 
-    const createdUser = await User.create([{ ...userData }], {
+    const createdUser = await User.create([{ ...userData, isVerified: true }], {
       session,
     });
-
     const userProfileData = {
       fullName: data.fullName,
       email: createdUser[0].email,
       user: createdUser[0]._id,
     };
+
     await UserProfile.create([userProfileData], { session });
 
     // await publishJob("emailQueue", {
@@ -82,15 +102,47 @@ const createUser = async (data: {
   }
 };
 
+const updateUserRole = async (
+  data: { userId: string; role: TUserRole },
+  authRole: TUserRole
+) => {
+  if (authRole === userRoles.ADMIN && data.role !== userRoles.SUPERVISOR) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      `ADMIN can only assign the ${userRoles.SUPERVISOR} role`
+    );
+  }
+
+  if (
+    authRole === userRoles.ADMIN &&
+    data.role !== userRoles.LEADER &&
+    data.role !== userRoles.EMPLOYEE
+  ) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      `SUPERVISOR can only assign the ${userRoles.LEADER} &  ${userRoles.EMPLOYEE} role`
+    );
+  }
+  const user = await User.findOneAndUpdate(
+    { _id: data.userId },
+    { role: data.role },
+    { new: true }
+  );
+  if (!user) {
+    throw new AppError(status.NOT_FOUND, "Role not updated.");
+  }
+  return user;
+};
+
 const userLogin = async (loginData: {
   email: string;
   password: string;
 }): Promise<{ accessToken: string; userData: any; refreshToken: string }> => {
-  const userData = await User.findOne({ email: loginData.email }).select(
-    "+password"
-  );
+  const userData = await User.findOne({
+    email: loginData.email.toLowerCase(),
+  }).select("+password");
   if (!userData) {
-    throw new AppError(status.BAD_REQUEST, "Please check your email");
+    throw new AppError(status.BAD_REQUEST, "User not found.");
   }
 
   if (userData.isVerified === false) {
@@ -306,6 +358,7 @@ const getNewAccessToken = async (
     appConfig.jwt.jwt_refresh_secret as string
   );
 
+  // eslint-disable-next-line no-shadow
   const { userEmail, userId, userRole } = decode;
 
   if (userEmail && userId && userRole) {
@@ -398,6 +451,7 @@ const reSendOtp = async (userEmail: string): Promise<{ message: string }> => {
 };
 export const AuthService = {
   createUser,
+  updateUserRole,
   userLogin,
   verifyUser,
   forgotPasswordRequest,

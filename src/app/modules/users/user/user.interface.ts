@@ -1,4 +1,4 @@
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
 import { TUserRole } from "../../../interface/auth.interface";
 
 export interface IBaseUser {
@@ -12,6 +12,7 @@ export interface IBaseUser {
   };
   isVerified: boolean;
   needToResetPass: boolean;
+  addedBy: Types.ObjectId;
 }
 
 export interface IUser extends IBaseUser, Document {

@@ -9,8 +9,15 @@ const router = Router();
 
 router.post(
   "/create-user",
+  auth("ADMIN", "SUPERVISOR"),
   zodValidator(zodCreateUserSchema),
   AuthController.createUser
+);
+
+router.patch(
+  "update-role",
+  auth("ADMIN", "SUPERVISOR"),
+  AuthController.updateUserRole
 );
 
 router.post("/get-access-token", AuthController.getNewAccessToken);

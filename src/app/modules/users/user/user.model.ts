@@ -16,7 +16,12 @@ const userSchema = new Schema<IUser>({
   },
   isVerified: { type: Boolean, default: false },
   needToResetPass: { type: Boolean, default: false },
+  addedBy: { type: Schema.Types.ObjectId, require: true, ref: "User" },
 });
+
+userSchema.index({ addedBy: 1 });
+
+userSchema.index({ addedBy: 1, _id: 1 });
 
 userSchema.methods.comparePassword = async function (enteredPassword: string) {
   try {
