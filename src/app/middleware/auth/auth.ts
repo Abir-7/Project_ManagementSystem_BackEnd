@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+<<<<<<< HEAD
 /* eslint-disable @typescript-eslint/no-explicit-any */
+=======
+>>>>>>> 32b4ee5644374484dc2d6429e2446a836cf9bce1
 import { NextFunction, Request, Response } from "express";
 import AppError from "../../errors/AppError";
 import status from "http-status";
@@ -62,7 +65,11 @@ export const auth =
       req.user = decodedData;
 
       return next();
+<<<<<<< HEAD
     } catch (error: any) {
+=======
+    } catch (error) {
+>>>>>>> 32b4ee5644374484dc2d6429e2446a836cf9bce1
       return next(
         new AppError(status.UNAUTHORIZED, "Invalid or expired token")
       );
