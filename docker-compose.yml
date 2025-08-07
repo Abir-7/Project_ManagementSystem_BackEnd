@@ -5,8 +5,8 @@ services:
     image: rabbitmq:3-management
     container_name: project-management-rabbitmq
     ports:
-      - "5673:5672"  # Changed left port to avoid conflict with old project
-      - "15673:15672" # Changed left port to avoid conflict with old project
+      - "5671:5672"  # Changed left port to avoid conflict with old project
+      - "15671:15672" # Changed left port to avoid conflict with old project
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}

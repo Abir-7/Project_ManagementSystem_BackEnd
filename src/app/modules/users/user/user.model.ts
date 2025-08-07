@@ -1,7 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable eqeqeq */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { model, Schema } from "mongoose";
-import { IUser } from "./user.interface";
+import { IUser, UserStatus } from "./user.interface";
 import { userRole } from "../../../interface/auth.interface";
 
 import bcrypt from "bcryptjs";
@@ -16,7 +18,24 @@ const userSchema = new Schema<IUser>({
   },
   isVerified: { type: Boolean, default: false },
   needToResetPass: { type: Boolean, default: false },
-  addedBy: { type: Schema.Types.ObjectId, require: true, ref: "User" },
+  addedBy: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    validate: {
+      validator: function (value: any) {
+        // If role is ADMIN, no need to have addedBy
+        if ((this as any).role === "ADMIN") return true;
+        // For others, addedBy must be present
+        return value != null;
+      },
+      message: "addedBy is required for non-ADMIN users",
+    },
+  },
+  status: {
+    type: String,
+    enum: Object.values(UserStatus),
+    default: UserStatus.WORKING,
+  },
 });
 
 userSchema.index({ addedBy: 1 });

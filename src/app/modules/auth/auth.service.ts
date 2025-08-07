@@ -24,6 +24,7 @@ const createUser = async (
     fullName: string;
     password: string;
     role: TUserRole;
+    phone: string;
   },
   authRole: TUserRole,
   userId: string
@@ -78,6 +79,7 @@ const createUser = async (
       fullName: data.fullName,
       email: createdUser[0].email,
       user: createdUser[0]._id,
+      phone: data.phone,
     };
 
     await UserProfile.create([userProfileData], { session });

@@ -5,9 +5,9 @@ const userProfileSchema = new Schema<IUserProfile>({
   fullName: { type: String },
   nickname: { type: String },
   dateOfBirth: { type: Date },
-  phone: { type: String },
+  phone: { type: String, default: "" },
   address: { type: String },
-  image: { type: String },
+  image: { type: String, default: "" },
   user: { type: Schema.Types.ObjectId, ref: "User", unique: true },
 });
 

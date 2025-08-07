@@ -13,6 +13,14 @@ export interface IBaseUser {
   isVerified: boolean;
   needToResetPass: boolean;
   addedBy: Types.ObjectId;
+
+  status: UserStatus;
+}
+
+export enum UserStatus {
+  DELETED = "DELETED",
+  BLOCKED = "BLOCKED",
+  WORKING = "WORKING",
 }
 
 export interface IUser extends IBaseUser, Document {

@@ -23,7 +23,7 @@ const main = async () => {
   logger.info("MongoDB connected");
   await seedAdmin();
 
-  await startConsumers();
+  startConsumers();
   // Wait up to 15 minutes for request to finish uploading //
   server.setTimeout(15 * 60 * 1000);
   //------------------------//
