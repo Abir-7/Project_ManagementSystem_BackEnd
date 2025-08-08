@@ -13,8 +13,8 @@ export interface IBaseUser {
   isVerified: boolean;
   needToResetPass: boolean;
   addedBy: Types.ObjectId;
-
   status: UserStatus;
+  teamId: Types.ObjectId;
 }
 
 export enum UserStatus {

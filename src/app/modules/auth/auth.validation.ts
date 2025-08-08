@@ -7,6 +7,7 @@ export const zodCreateUserSchema = z.object({
       fullName: z.string(),
       email: z.string().email(),
       password: z.string(),
+      phone: z.string(),
       role: z.enum([...userRole] as [(typeof userRole)[number]]),
     })
     .strict(),

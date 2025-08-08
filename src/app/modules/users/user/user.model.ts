@@ -36,6 +36,19 @@ const userSchema = new Schema<IUser>({
     enum: Object.values(UserStatus),
     default: UserStatus.WORKING,
   },
+  teamId: {
+    type: Schema.Types.ObjectId,
+    ref: "Team",
+    validate: {
+      validator: function (value: any) {
+        if (["EMPLOYEE", "LEADER"].includes((this as any).role)) {
+          return true; // optional, can be set later
+        }
+        return value == null; // prevent teamId for admin/supervisor
+      },
+      message: "Only EMPLOYEE and LEADER can have a teamId",
+    },
+  },
 });
 
 userSchema.index({ addedBy: 1 });
