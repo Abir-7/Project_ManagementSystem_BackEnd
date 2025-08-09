@@ -15,4 +15,11 @@ router.get(
   auth("ADMIN"),
   UserController.getSuperVisorList
 );
+
+router.get(
+  "/get-employee-list",
+  auth("SUPERVISOR"),
+  UserController.getEmployeeList
+);
+
 export const UserRoute = router;
