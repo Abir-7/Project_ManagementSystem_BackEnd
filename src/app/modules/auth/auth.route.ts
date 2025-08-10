@@ -14,12 +14,6 @@ router.post(
   AuthController.createUser
 );
 
-router.patch(
-  "update-role",
-  auth("ADMIN", "SUPERVISOR"),
-  AuthController.updateUserRole
-);
-
 router.post("/get-access-token", AuthController.getNewAccessToken);
 
 router.post("/login", AuthController.userLogin);

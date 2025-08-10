@@ -1,8 +1,9 @@
 import { TeamService } from "./team.service";
 import { TeamStatus } from "./team.interface";
-import catchAsync from "../../utils/serverTools/catchAsync";
+
 import sendResponse from "../../utils/serverTools/sendResponse";
 import httpStatus from "http-status";
+import catchAsync from "../../utils/serverTools/catchAsync";
 
 const createTeam = catchAsync(async (req, res) => {
   const { name } = req.body;
@@ -14,6 +15,32 @@ const createTeam = catchAsync(async (req, res) => {
     success: true,
     statusCode: httpStatus.CREATED,
     message: "Team created successfully",
+    data: result,
+  });
+});
+
+const assignEmployeeToTeam = catchAsync(async (req, res) => {
+  const { userId, teamId } = req.body;
+
+  const result = await TeamService.assignEmployeeToTeam(userId, teamId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.CREATED,
+    message: "Employee assinged to a team successfully",
+    data: result,
+  });
+});
+
+const assignEmployeeToNewTeam = catchAsync(async (req, res) => {
+  const { userId, teamId } = req.body;
+
+  const result = await TeamService.assignEmployeeToNewTeam(userId, teamId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.CREATED,
+    message: "Employee assinged to a new team successfully",
     data: result,
   });
 });
@@ -41,8 +68,28 @@ const getTeamList = catchAsync(async (req, res) => {
     meta: result.meta,
   });
 });
+const splitTeam = catchAsync(async (req, res) => {
+  const { originalTeamId, newTeamName, employeeIdsToMove } = req.body;
+
+  const result = await TeamService.splitTeam(
+    originalTeamId,
+    newTeamName,
+    employeeIdsToMove,
+    req.user.userId
+  );
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Team splited successfully",
+    data: result,
+  });
+});
 
 export const TeamController = {
   createTeam,
+  assignEmployeeToTeam,
+  assignEmployeeToNewTeam,
   getTeamList,
+  splitTeam,
 };

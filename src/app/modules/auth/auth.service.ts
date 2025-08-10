@@ -17,6 +17,7 @@ import mongoose from "mongoose";
 import { isTimeExpired } from "../../utils/helper/isTimeExpire";
 //import { publishJob } from "../../rabbitMq/publisher";
 import { TUserRole, userRoles } from "../../interface/auth.interface";
+import { SupervisorEmployee } from "../relational_table/employee_supervisor/employee_supervisor.model";
 
 const createUser = async (
   data: {
@@ -84,6 +85,13 @@ const createUser = async (
 
     await UserProfile.create([userProfileData], { session });
 
+    if (data.role === "EMPLOYEE" && authRole === "SUPERVISOR") {
+      await SupervisorEmployee.create(
+        [{ employee: createdUser[0]._id, present_supervisor: userId }],
+        { session }
+      );
+    }
+
     // await publishJob("emailQueue", {
     //   to: data.email,
     //   subject: "Email Verification Code",
@@ -102,38 +110,6 @@ const createUser = async (
     session.endSession();
     throw error;
   }
-};
-
-const updateUserRole = async (
-  data: { userId: string; role: TUserRole },
-  authRole: TUserRole
-) => {
-  if (authRole === userRoles.ADMIN && data.role !== userRoles.SUPERVISOR) {
-    throw new AppError(
-      status.BAD_REQUEST,
-      `ADMIN can only assign the ${userRoles.SUPERVISOR} role`
-    );
-  }
-
-  if (
-    authRole === userRoles.ADMIN &&
-    data.role !== userRoles.LEADER &&
-    data.role !== userRoles.EMPLOYEE
-  ) {
-    throw new AppError(
-      status.BAD_REQUEST,
-      `SUPERVISOR can only assign the ${userRoles.LEADER} &  ${userRoles.EMPLOYEE} role`
-    );
-  }
-  const user = await User.findOneAndUpdate(
-    { _id: data.userId },
-    { role: data.role },
-    { new: true }
-  );
-  if (!user) {
-    throw new AppError(status.NOT_FOUND, "Role not updated.");
-  }
-  return user;
 };
 
 const userLogin = async (loginData: {
@@ -453,7 +429,7 @@ const reSendOtp = async (userEmail: string): Promise<{ message: string }> => {
 };
 export const AuthService = {
   createUser,
-  updateUserRole,
+
   userLogin,
   verifyUser,
   forgotPasswordRequest,

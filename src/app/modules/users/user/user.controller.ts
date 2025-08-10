@@ -2,7 +2,34 @@ import status from "http-status";
 import catchAsync from "../../../utils/serverTools/catchAsync";
 import sendResponse from "../../../utils/serverTools/sendResponse";
 import { UserService } from "./user.service";
-import { userRoles } from "../../../interface/auth.interface";
+
+const updateUserRole = catchAsync(async (req, res) => {
+  const userData = req.body;
+  const result = await UserService.updateUserRole(userData, req.user.userRole);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "User role  successfully updated",
+    data: result,
+  });
+});
+
+const updateUserStatus = catchAsync(async (req, res) => {
+  const { userId, status: userStatus } = req.body;
+  const result = await UserService.updateUserStatus(
+    userId,
+    userStatus,
+    req.user.userRole
+  );
+
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "User role  successfully updated",
+    data: result,
+  });
+});
 
 const getMyData = catchAsync(async (req, res) => {
   const result = await UserService.getMyData(req.user.userId);
@@ -14,26 +41,9 @@ const getMyData = catchAsync(async (req, res) => {
     data: result,
   });
 });
-const getSuperVisorList = catchAsync(async (req, res) => {
-  const { page = 1, limit = 12, searchTerm } = req.query;
 
-  const result = await UserService.getSupervisorList(
-    Number(page),
-    Number(limit),
-    searchTerm as string,
-    userRoles.SUPERVISOR
-  );
-
-  sendResponse(res, {
-    success: true,
-    statusCode: status.OK,
-    message: "Supervisor data is fetched successfully",
-    data: result.simplifiedData,
-    meta: result.meta,
-  });
-});
-
-const getEmployeeList = catchAsync(async (req, res) => {
+const getEmployeeListOfSupervisor = catchAsync(async (req, res) => {
+  console.log("object");
   const { page = 1, limit = 12, searchTerm, teamId } = req.query;
 
   const result = await UserService.getAllUserUnderASupervisor(
@@ -54,7 +64,8 @@ const getEmployeeList = catchAsync(async (req, res) => {
 });
 
 export const UserController = {
+  updateUserRole,
+  updateUserStatus,
   getMyData,
-  getSuperVisorList,
-  getEmployeeList,
+  getEmployeeListOfSupervisor,
 };

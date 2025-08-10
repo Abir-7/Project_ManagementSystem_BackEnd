@@ -12,15 +12,12 @@ export interface IBaseUser {
   };
   isVerified: boolean;
   needToResetPass: boolean;
-  present_supervisor: Types.ObjectId;
   addedBy: Types.ObjectId;
   status: UserStatus;
-  teamId: Types.ObjectId;
 }
 
 export enum UserStatus {
-  DELETED = "DELETED",
-  BLOCKED = "BLOCKED",
+  RESIGNED = "RESIGNED",
   WORKING = "WORKING",
 }
 

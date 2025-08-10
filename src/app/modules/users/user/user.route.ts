@@ -5,21 +5,28 @@ import { auth } from "../../../middleware/auth/auth";
 
 const router = Router();
 
+router.patch(
+  "/update-role",
+  auth("ADMIN", "SUPERVISOR"),
+  UserController.updateUserRole
+);
+
+router.patch(
+  "/update-status",
+  auth("SUPERVISOR"),
+  UserController.updateUserStatus
+);
+
 router.get(
   "/me",
   auth("ADMIN", "SUPERVISOR", "EMPLOYEE", "LEADER"),
   UserController.getMyData
 );
-router.get(
-  "/get-supervisor-list",
-  auth("ADMIN"),
-  UserController.getSuperVisorList
-);
 
 router.get(
   "/get-employee-list",
   auth("SUPERVISOR"),
-  UserController.getEmployeeList
+  UserController.getEmployeeListOfSupervisor
 );
 
 export const UserRoute = router;

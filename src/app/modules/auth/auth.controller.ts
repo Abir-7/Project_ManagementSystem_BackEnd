@@ -16,18 +16,7 @@ const createUser = catchAsync(async (req, res) => {
   sendResponse(res, {
     success: true,
     statusCode: status.OK,
-    message: "User successfully created.Check your email for code.",
-    data: result,
-  });
-});
-const updateUserRole = catchAsync(async (req, res) => {
-  const userData = req.body;
-  const result = await AuthService.updateUserRole(userData, req.user.userRole);
-
-  sendResponse(res, {
-    success: true,
-    statusCode: status.OK,
-    message: "User successfully created.Check your email for code.",
+    message: "User successfully created",
     data: result,
   });
 });
@@ -123,7 +112,7 @@ const reSendOtp = catchAsync(async (req, res) => {
 
 export const AuthController = {
   createUser,
-  updateUserRole,
+
   verifyUser,
   forgotPasswordRequest,
   resetPassword,
