@@ -1,0 +1,77 @@
+export const valuation_data = [
+  {
+    type: "Project Valuation (App)",
+    fixedPercent: 0.2,
+    phases: [
+      { phase: "UI", percent: 0.2 },
+      { phase: "App Design + Integration", percent: 0.31 },
+      { phase: "Dashboard Design + Integration", percent: 0.13 },
+      { phase: "Backend", percent: 0.31 },
+      { phase: "App Deployment", percent: 0.025 },
+      { phase: "Web Deployment", percent: 0.025 },
+    ],
+  },
+  {
+    type: "Project Valuation (Web)",
+    fixedPercent: 0.2,
+    phases: [
+      { phase: "UI", percent: 0.2 },
+      { phase: "Website Design + Integration", percent: 0.31 },
+      { phase: "Dashboard Design + Integration", percent: 0.13 },
+      { phase: "Backend", percent: 0.31 },
+      { phase: "Deployment", percent: 0.05 },
+    ],
+  },
+  {
+    type: "Project Valuation (App+Web)",
+    fixedPercent: 0.2,
+    phases: [
+      { phase: "UI", percent: 0.2 },
+      { phase: "App Design + Integration", percent: 0.22 },
+      { phase: "Website Design + Integration", percent: 0.16 },
+      { phase: "Dashboard Design + Integration", percent: 0.12 },
+      { phase: "Backend", percent: 0.25 },
+      { phase: "App Deployment", percent: 0.025 },
+      { phase: "Web Deployment", percent: 0.025 },
+    ],
+  },
+  {
+    type: "Project Valuation (App+Web) + AI",
+    fixedPercent: 0.2,
+    phases: [
+      { phase: "UI", percent: 0.2 },
+      { phase: "App Design + Integration", percent: 0.2 },
+      { phase: "Website Design + Integration", percent: 0.13 },
+      { phase: "Dashboard Design + Integration", percent: 0.1 },
+      { phase: "Backend", percent: 0.2 },
+      { phase: "AI", percent: 0.12 },
+      { phase: "App Deployment", percent: 0.025 },
+      { phase: "Web Deployment", percent: 0.025 },
+    ],
+  },
+  {
+    type: "Project Valuation (App) With AI",
+    fixedPercent: 0.2,
+    phases: [
+      { phase: "UI", percent: 0.17 },
+      { phase: "App Design + Integration", percent: 0.25 },
+      { phase: "Dashboard Design + Integration", percent: 0.12 },
+      { phase: "Backend", percent: 0.25 },
+      { phase: "AI", percent: 0.16 },
+      { phase: "Web Deployment", percent: 0.025 },
+      { phase: "App Deployment", percent: 0.025 },
+    ],
+  },
+  {
+    type: "Project Valuation (Web) With AI",
+    fixedPercent: 0.2,
+    phases: [
+      { phase: "UI", percent: 0.17 },
+      { phase: "Website Design + Integration", percent: 0.25 },
+      { phase: "Dashboard Design + Integration", percent: 0.12 },
+      { phase: "Backend", percent: 0.25 },
+      { phase: "AI", percent: 0.16 },
+      { phase: "Web Deployment", percent: 0.05 },
+    ],
+  },
+];

@@ -6,7 +6,7 @@ import { userRoles } from "../interface/auth.interface";
 import User from "../modules/users/user/user.model";
 import logger from "../utils/serverTools/logger";
 import getHashedPassword from "../utils/helper/getHashedPassword";
-import { UserProfile } from "../modules/users/userProfile/userProfile.model";
+import { UserProfile } from "../modules/users/user_profile/userProfile.model";
 
 const superUser = {
   role: userRoles.ADMIN,

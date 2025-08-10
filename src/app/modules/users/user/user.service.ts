@@ -3,7 +3,7 @@
 
 import status from "http-status";
 import { TUserRole, userRoles } from "../../../interface/auth.interface";
-import { UserProfile } from "../userProfile/userProfile.model";
+import { UserProfile } from "../user_profile/userProfile.model";
 import User from "./user.model";
 import { PipelineStage, Types } from "mongoose";
 import AppError from "../../../errors/AppError";

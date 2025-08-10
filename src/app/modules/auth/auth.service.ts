@@ -6,7 +6,7 @@ import User from "../users/user/user.model";
 
 import { jsonWebToken } from "../../utils/jwt/jwt";
 
-import { UserProfile } from "../users/userProfile/userProfile.model";
+import { UserProfile } from "../users/user_profile/userProfile.model";
 import getExpiryTime from "../../utils/helper/getExpiryTime";
 import getOtp from "../../utils/helper/getOtp";
 import { sendEmail } from "../../utils/sendEmail";
