@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ClientSession, startSession, Types } from "mongoose";
+import mongoose, { ClientSession, startSession, Types } from "mongoose";
 import { Project } from "./project.model";
 import { ProjectPhase } from "../project_phase/phase.model";
 import { TeamProject } from "../../relational_table/team_project/team_project.model";
@@ -8,6 +8,8 @@ import { Team } from "../../team/team.model";
 import { EmployeeProject } from "../../relational_table/employee_project_phase/employee_project.model";
 import AppError from "../../../errors/AppError";
 import status from "http-status";
+import { IProjectStatus } from "./project.interface";
+import { IPhaseStatus } from "../project_phase/phase.interface";
 
 interface PhaseInput {
   name: string;
@@ -100,21 +102,46 @@ const addProject = async (data: AddProjectInput) => {
 const getAllProject = async (
   page: number,
   limit: number,
-  searchTerm: string
+  searchTerm: string,
+  teamId?: string,
+  projectStatus?: IProjectStatus
 ) => {
-  const matchStage = searchTerm
-    ? {
-        $match: {
-          $or: [
-            { name: { $regex: searchTerm, $options: "i" } },
-            { clientName: { $regex: searchTerm, $options: "i" } },
-          ],
-        },
-      }
-    : { $match: {} };
+  const matchConditions: any = {};
+
+  // Search filter
+  if (searchTerm) {
+    matchConditions.$or = [
+      { name: { $regex: searchTerm, $options: "i" } },
+      { clientName: { $regex: searchTerm, $options: "i" } },
+    ];
+  }
+
+  // Project status filter
+  if (projectStatus) {
+    matchConditions.status = projectStatus;
+  }
 
   const projects = await Project.aggregate([
-    matchStage,
+    { $match: matchConditions },
+
+    {
+      $lookup: {
+        from: "teamprojects",
+        localField: "_id",
+        foreignField: "project",
+        as: "teamProjects",
+      },
+    },
+
+    ...(teamId
+      ? [
+          {
+            $match: {
+              "teamProjects.team": new mongoose.Types.ObjectId(teamId),
+            },
+          },
+        ]
+      : []),
 
     {
       $lookup: {
@@ -125,17 +152,9 @@ const getAllProject = async (
       },
     },
 
-    {
-      $sort: { createdAt: -1 }, // sort latest projects first
-    },
-
-    {
-      $skip: (page - 1) * limit,
-    },
-
-    {
-      $limit: limit,
-    },
+    { $sort: { createdAt: -1 } },
+    { $skip: (page - 1) * limit },
+    { $limit: limit },
   ]);
 
   return projects;
@@ -239,14 +258,14 @@ const assignEmployeeToProject = async (
   employee: string,
   projectPhase: string
 ) => {
-  const project = await ProjectPhase.findOne({ _id: projectPhase });
+  const projectPhaseData = await ProjectPhase.findOne({ _id: projectPhase });
 
-  if (!project) {
+  if (!projectPhaseData) {
     throw new AppError(status.NOT_FOUND, "Project data not found.");
   }
 
   const result = await EmployeeProject.create({
-    project: project._id,
+    project: projectPhaseData.project,
     projectPhase,
     employee,
   });
@@ -254,9 +273,249 @@ const assignEmployeeToProject = async (
   return result;
 };
 
+const updateWorkProgress = async (
+  userId: string,
+  phaseId: string,
+  data: {
+    phaseStatus: IPhaseStatus;
+    progress: number;
+  }
+) => {
+  const userPhaseRelation = await EmployeeProject.findOne({
+    employee: userId,
+    projectPhase: phaseId,
+  });
+
+  if (!userPhaseRelation) {
+    throw new AppError(
+      status.NOT_FOUND,
+      "User project relation data not found."
+    );
+  }
+
+  const phaseData = await ProjectPhase.findOne({
+    _id: userPhaseRelation.projectPhase,
+  });
+
+  if (!phaseData) {
+    throw new AppError(status.NOT_FOUND, "Project phase data not found.");
+  }
+
+  if (data.phaseStatus) {
+    phaseData.status = data.phaseStatus;
+  }
+
+  if (data.progress > 0) {
+    userPhaseRelation.progress = data.progress;
+  }
+
+  await userPhaseRelation.save();
+  await phaseData.save();
+
+  return { ...phaseData.toObject(), progress: userPhaseRelation.progress };
+};
+
+const getMyProject = async (userId: string) => {
+  const data = await EmployeeProject.aggregate([
+    // 1. Only EmployeeProject docs for this user
+    {
+      $match: {
+        employee: new mongoose.Types.ObjectId(userId),
+      },
+    },
+
+    // 2. Join Project info
+    {
+      $lookup: {
+        from: "projects",
+        localField: "project",
+        foreignField: "_id",
+        as: "project",
+      },
+    },
+    { $unwind: "$project" },
+
+    // 3. Lookup all phases for the project
+    {
+      $lookup: {
+        from: "projectphases",
+        localField: "project._id",
+        foreignField: "project",
+        as: "phases",
+      },
+    },
+
+    // 4. Unwind phases to process each one separately
+    { $unwind: "$phases" },
+
+    // 5. Find all EmployeeProject docs assigned to this phase (all users assigned to this phase)
+    {
+      $lookup: {
+        from: "employeeprojects",
+        localField: "phases._id",
+        foreignField: "projectPhase",
+        as: "phaseAssignments",
+      },
+    },
+
+    // 6. Lookup users assigned to this phase
+    {
+      $lookup: {
+        from: "users",
+        localField: "phaseAssignments.employee",
+        foreignField: "_id",
+        as: "userData",
+      },
+    },
+
+    // 7. Lookup profiles for these users
+    {
+      $lookup: {
+        from: "userprofiles",
+        localField: "userData._id",
+        foreignField: "user",
+        as: "userProfiles",
+      },
+    },
+
+    // 8. Attach profile data into corresponding user with selected fields
+    {
+      $addFields: {
+        userData: {
+          $map: {
+            input: "$userData",
+            as: "user",
+            in: {
+              userId: "$$user._id",
+              email: "$$user.email",
+              status: "$$user.status",
+              role: "$$user.role",
+              name: {
+                $let: {
+                  vars: {
+                    profile: {
+                      $arrayElemAt: [
+                        {
+                          $filter: {
+                            input: "$userProfiles",
+                            as: "profile",
+                            cond: { $eq: ["$$profile.user", "$$user._id"] },
+                          },
+                        },
+                        0,
+                      ],
+                    },
+                  },
+                  in: "$$profile.fullName",
+                },
+              },
+              phone: {
+                $let: {
+                  vars: {
+                    profile: {
+                      $arrayElemAt: [
+                        {
+                          $filter: {
+                            input: "$userProfiles",
+                            as: "profile",
+                            cond: { $eq: ["$$profile.user", "$$user._id"] },
+                          },
+                        },
+                        0,
+                      ],
+                    },
+                  },
+                  in: { $ifNull: ["$$profile.phone", ""] },
+                },
+              },
+              image: {
+                $let: {
+                  vars: {
+                    profile: {
+                      $arrayElemAt: [
+                        {
+                          $filter: {
+                            input: "$userProfiles",
+                            as: "profile",
+                            cond: { $eq: ["$$profile.user", "$$user._id"] },
+                          },
+                        },
+                        0,
+                      ],
+                    },
+                  },
+                  in: { $ifNull: ["$$profile.image", ""] },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+
+    // 9. Find progress of this user in this phase
+    {
+      $addFields: {
+        phaseProgress: {
+          $let: {
+            vars: {
+              myAssignment: {
+                $arrayElemAt: [
+                  {
+                    $filter: {
+                      input: "$phaseAssignments",
+                      as: "pa",
+                      cond: {
+                        $eq: [
+                          "$$pa.employee",
+                          new mongoose.Types.ObjectId(userId),
+                        ],
+                      },
+                    },
+                  },
+                  0,
+                ],
+              },
+            },
+            in: { $ifNull: ["$$myAssignment.progress", 0] },
+          },
+        },
+      },
+    },
+
+    // 10. Group phases back into project array, adding userData & phaseProgress inside each phase
+    {
+      $group: {
+        _id: "$project._id",
+        project: { $first: "$project" },
+        phases: {
+          $push: {
+            _id: "$phases._id",
+            name: "$phases.name",
+            budget: "$phases.budget",
+            deadline: "$phases.deadline",
+            status: "$phases.status",
+            project: "$phases.project",
+            createdAt: "$phases.createdAt",
+            updatedAt: "$phases.updatedAt",
+            fixed_kpi: "$phases.fixed_kpi",
+            kpi: "$phases.kpi",
+            userData: "$userData",
+            phaseProgress: "$phaseProgress",
+          },
+        },
+      },
+    },
+  ]);
+
+  return data;
+};
+
 export const ProjectService = {
   addProject,
   getAllProject,
   getPhaseDetails,
   assignEmployeeToProject,
+  updateWorkProgress,
+  getMyProject,
 };

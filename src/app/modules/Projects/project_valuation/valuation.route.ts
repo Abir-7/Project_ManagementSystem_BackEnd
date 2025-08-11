@@ -13,10 +13,5 @@ router.post(
   auth("SUPERVISOR"),
   ProjectValuationController.addProjectValuationData
 );
-router.post(
-  "/add-valuation-to-phase",
-  auth("SUPERVISOR"),
-  ProjectValuationController.addValuationToProjectPhase
-);
 
 export const ProjectValuationRoute = router;

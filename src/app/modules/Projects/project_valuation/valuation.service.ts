@@ -2,9 +2,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import mongoose from "mongoose";
 import { ProjectValuation, ProjectValuationType } from "./valuation.model";
-import AppError from "../../../errors/AppError";
-import status from "http-status";
-import PhaseValuation from "../../relational_table/project_valuation_project_phase/valuation_phase.model";
 
 interface PhaseInput {
   phase: string;
@@ -92,37 +89,7 @@ const getValuationData = async () => {
   return result;
 };
 
-const addValuationToProjectPhase = async (
-  valuationId: string,
-  projectPhase: string
-) => {
-  const valuationData = await ProjectValuation.findOne({
-    _id: valuationId,
-  }).lean();
-
-  if (!valuationData)
-    throw new AppError(status.NOT_FOUND, "Valuation data not found.");
-
-  const valuationType = await ProjectValuationType.findOne({
-    _id: valuationData?.project_valuation_type,
-  });
-
-  if (!valuationType)
-    throw new AppError(status.NOT_FOUND, "Valuation type data not found.");
-
-  const result = await PhaseValuation.create({
-    project_valuation_type: valuationData.project_valuation_type,
-    projectPhase,
-    valuationId,
-    present_fixed_percent: valuationType.fixedPercent,
-    present_percent: valuationData.percent,
-  });
-
-  return result;
-};
-
 export const ProjectValuationService = {
   saveProjectValuations,
   getValuationData,
-  addValuationToProjectPhase,
 };

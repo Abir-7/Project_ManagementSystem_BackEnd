@@ -16,6 +16,17 @@ router.get(
   auth("SUPERVISOR", "LEADER", "EMPLOYEE"),
   ProjectController.getPhaseDetails
 );
+router.patch(
+  "/update-work-progress/:phaseId",
+  auth("EMPLOYEE"),
+  ProjectController.updateWorkProgress
+);
+
+router.get(
+  "/get-my-projects",
+  auth("SUPERVISOR", "LEADER", "EMPLOYEE"),
+  ProjectController.getMyProject
+);
 
 router.post(
   "/add",
