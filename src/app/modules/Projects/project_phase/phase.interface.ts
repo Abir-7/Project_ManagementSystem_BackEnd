@@ -6,6 +6,8 @@ export interface IProjectPhase {
   deadline: Date;
   status: IPhaseStatus;
   project: Types.ObjectId;
+  fixed_kpi: number;
+  kpi: number;
 }
 
 export enum IPhaseStatus {

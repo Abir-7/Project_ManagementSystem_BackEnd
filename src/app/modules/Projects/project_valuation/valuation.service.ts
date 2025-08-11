@@ -103,10 +103,19 @@ const addValuationToProjectPhase = async (
   if (!valuationData)
     throw new AppError(status.NOT_FOUND, "Valuation data not found.");
 
+  const valuationType = await ProjectValuationType.findOne({
+    _id: valuationData?.project_valuation_type,
+  });
+
+  if (!valuationType)
+    throw new AppError(status.NOT_FOUND, "Valuation type data not found.");
+
   const result = await PhaseValuation.create({
     project_valuation_type: valuationData.project_valuation_type,
     projectPhase,
     valuationId,
+    present_fixed_percent: valuationType.fixedPercent,
+    present_percent: valuationData.percent,
   });
 
   return result;

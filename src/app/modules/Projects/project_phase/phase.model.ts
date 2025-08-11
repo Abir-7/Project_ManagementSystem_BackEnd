@@ -26,6 +26,8 @@ const ProjectPhaseSchema = new Schema<IProjectPhase>(
       ref: "Project", // Replace with your actual Project model name
       required: true,
     },
+    fixed_kpi: { type: Number, default: 0 },
+    kpi: { type: Number, default: 0 },
   },
   {
     timestamps: true,

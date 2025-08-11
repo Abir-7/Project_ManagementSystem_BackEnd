@@ -18,6 +18,8 @@ const PhaseValuationSchema = new Schema<IPhaseValuation>(
       required: true,
       ref: "ProjectPhase",
     },
+    present_fixed_percent: { type: Number, required: true },
+    present_percent: { type: Number, required: true },
   },
   {
     timestamps: true,
