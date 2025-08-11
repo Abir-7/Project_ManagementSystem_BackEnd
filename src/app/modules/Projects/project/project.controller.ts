@@ -13,7 +13,49 @@ const addProject = catchAsync(async (req, res) => {
     data: result,
   });
 });
+const getAllProject = catchAsync(async (req, res) => {
+  const page = parseInt(req.query.page as string, 10) || 1;
+  const limit = parseInt(req.query.limit as string, 10) || 10;
+  const searchTerm = (req.query.searchTerm as string) || "";
+
+  const result = await ProjectService.getAllProject(page, limit, searchTerm);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.CREATED,
+    message: "All Project fetched successfully",
+    data: result,
+  });
+});
+
+const getPhaseDetails = catchAsync(async (req, res) => {
+  const result = await ProjectService.getPhaseDetails(req.params.phaseId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.CREATED,
+    message: "Phase details fetched successfully",
+    data: result,
+  });
+});
+
+const assignEmployeeToProject = catchAsync(async (req, res) => {
+  const result = await ProjectService.assignEmployeeToProject(
+    req.body.employee,
+    req.body.projectPhase
+  );
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.CREATED,
+    message: "Employee assign to a project phase successfully",
+    data: result,
+  });
+});
 
 export const ProjectController = {
   addProject,
+  getAllProject,
+  getPhaseDetails,
+  assignEmployeeToProject,
 };

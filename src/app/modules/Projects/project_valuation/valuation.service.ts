@@ -2,6 +2,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import mongoose from "mongoose";
 import { ProjectValuation, ProjectValuationType } from "./valuation.model";
+import AppError from "../../../errors/AppError";
+import status from "http-status";
+import PhaseValuation from "../../relational_table/project_valuation_project_phase/valuation_phase.model";
 
 interface PhaseInput {
   phase: string;
@@ -34,7 +37,7 @@ const saveProjectValuations = async (data: ValuationTypeInput[]) => {
       const phaseDocs = valuationType.phases.map((phase) => ({
         project_valuation_type: savedType[0]._id,
         phase: phase.phase,
-        percentOne: phase.percent,
+        percent: phase.percent,
       }));
 
       // Insert all phases at once (bulk insert)
@@ -51,6 +54,66 @@ const saveProjectValuations = async (data: ValuationTypeInput[]) => {
   }
 };
 
+const getValuationData = async () => {
+  const result = await ProjectValuation.aggregate([
+    {
+      $lookup: {
+        from: "projectvaluationtypes",
+        localField: "project_valuation_type",
+        foreignField: "_id",
+        as: "valuationTypeDetails",
+      },
+    },
+    { $unwind: "$valuationTypeDetails" },
+    {
+      $group: {
+        _id: "$project_valuation_type",
+        projectValuationType: { $first: "$valuationTypeDetails.type" },
+        fixedPercent: { $first: "$valuationTypeDetails.fixedPercent" },
+        phases: {
+          $push: {
+            _id: "$_id",
+            phase: "$phase",
+            percent: "$percent",
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        projectValuationType: 1,
+        fixedPercent: 1,
+        phases: 1,
+      },
+    },
+  ]);
+
+  return result;
+};
+
+const addValuationToProjectPhase = async (
+  valuationId: string,
+  projectPhase: string
+) => {
+  const valuationData = await ProjectValuation.findOne({
+    _id: valuationId,
+  }).lean();
+
+  if (!valuationData)
+    throw new AppError(status.NOT_FOUND, "Valuation data not found.");
+
+  const result = await PhaseValuation.create({
+    project_valuation_type: valuationData.project_valuation_type,
+    projectPhase,
+    valuationId,
+  });
+
+  return result;
+};
+
 export const ProjectValuationService = {
   saveProjectValuations,
+  getValuationData,
+  addValuationToProjectPhase,
 };
