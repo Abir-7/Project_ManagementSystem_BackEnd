@@ -5,11 +5,12 @@ import { Project } from "./project.model";
 import { ProjectPhase } from "../project_phase/phase.model";
 import { TeamProject } from "../../relational_table/team_project/team_project.model";
 import { Team } from "../../team/team.model";
-import { EmployeeProject } from "../../relational_table/employee_project_phase/employee_project.model";
+import { EmployeePhase } from "../../relational_table/employee_project_phase/employee_phase/employee_phase.model";
 import AppError from "../../../errors/AppError";
 import status from "http-status";
 import { IProjectStatus } from "./project.interface";
 import { IPhaseStatus } from "../project_phase/phase.interface";
+import { EmployeeProject } from "../../relational_table/employee_project_phase/employee_project/employee_project.model";
 
 interface PhaseInput {
   name: string;
@@ -258,19 +259,71 @@ const assignEmployeeToProject = async (
   employee: string,
   projectPhase: string
 ) => {
-  const projectPhaseData = await ProjectPhase.findOne({ _id: projectPhase });
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  if (!projectPhaseData) {
-    throw new AppError(status.NOT_FOUND, "Project data not found.");
+  try {
+    // 1️⃣ Find project phase
+    const projectPhaseData = await ProjectPhase.findById(projectPhase).session(
+      session
+    );
+    if (!projectPhaseData) {
+      throw new AppError(status.NOT_FOUND, "Project phase not found.");
+    }
+
+    // 2️⃣ Check if EmployeeProject already exists
+    let employeeProject = await EmployeeProject.findOne({
+      project: projectPhaseData.project,
+      employee,
+    }).session(session);
+
+    // 3️⃣ If not exists, create it
+    if (!employeeProject) {
+      [employeeProject] = await EmployeeProject.create(
+        [
+          {
+            project: projectPhaseData.project,
+            employee,
+          },
+        ],
+        { session }
+      );
+    }
+
+    // 4️⃣ Check if already assigned to this exact phase
+    const alreadyInPhase = await EmployeePhase.findOne({
+      projectPhase,
+      employee,
+    }).session(session);
+
+    if (alreadyInPhase) {
+      throw new AppError(
+        status.CONFLICT,
+        "Employee already assigned to this phase."
+      );
+    }
+
+    // 5️⃣ Create EmployeePhase
+    await EmployeePhase.create(
+      [
+        {
+          projectPhase,
+          employee,
+        },
+      ],
+      { session }
+    );
+
+    // 6️⃣ Commit transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    return employeeProject;
+  } catch (error: any) {
+    await session.abortTransaction();
+    session.endSession();
+    throw new Error(error);
   }
-
-  const result = await EmployeeProject.create({
-    project: projectPhaseData.project,
-    projectPhase,
-    employee,
-  });
-
-  return result;
 };
 
 const updateWorkProgress = async (
@@ -281,7 +334,7 @@ const updateWorkProgress = async (
     progress: number;
   }
 ) => {
-  const userPhaseRelation = await EmployeeProject.findOne({
+  const userPhaseRelation = await EmployeePhase.findOne({
     employee: userId,
     projectPhase: phaseId,
   });
@@ -315,195 +368,107 @@ const updateWorkProgress = async (
   return { ...phaseData.toObject(), progress: userPhaseRelation.progress };
 };
 
-const getMyProject = async (userId: string) => {
+const getMyProject = async (
+  userId: string,
+  projectStatus: IProjectStatus,
+  page: number = 1,
+  limit: number = 10
+) => {
+  const skip = (page - 1) * limit;
+
   const data = await EmployeeProject.aggregate([
-    // 1. Only EmployeeProject docs for this user
     {
       $match: {
         employee: new mongoose.Types.ObjectId(userId),
       },
     },
-
-    // 2. Join Project info
+    // Join projects to filter by projectStatus
     {
       $lookup: {
         from: "projects",
         localField: "project",
         foreignField: "_id",
-        as: "project",
+        as: "projectDetails",
       },
     },
-    { $unwind: "$project" },
-
-    // 3. Lookup all phases for the project
+    {
+      $unwind: "$projectDetails",
+    },
+    {
+      $match: {
+        "projectDetails.status": projectStatus,
+      },
+    },
+    {
+      $skip: skip,
+    },
+    {
+      $limit: limit,
+    },
+    // your existing $lookup to get phases & nested data here...
     {
       $lookup: {
         from: "projectphases",
-        localField: "project._id",
-        foreignField: "project",
-        as: "phases",
-      },
-    },
-
-    // 4. Unwind phases to process each one separately
-    { $unwind: "$phases" },
-
-    // 5. Find all EmployeeProject docs assigned to this phase (all users assigned to this phase)
-    {
-      $lookup: {
-        from: "employeeprojects",
-        localField: "phases._id",
-        foreignField: "projectPhase",
-        as: "phaseAssignments",
-      },
-    },
-
-    // 6. Lookup users assigned to this phase
-    {
-      $lookup: {
-        from: "users",
-        localField: "phaseAssignments.employee",
-        foreignField: "_id",
-        as: "userData",
-      },
-    },
-
-    // 7. Lookup profiles for these users
-    {
-      $lookup: {
-        from: "userprofiles",
-        localField: "userData._id",
-        foreignField: "user",
-        as: "userProfiles",
-      },
-    },
-
-    // 8. Attach profile data into corresponding user with selected fields
-    {
-      $addFields: {
-        userData: {
-          $map: {
-            input: "$userData",
-            as: "user",
-            in: {
-              userId: "$$user._id",
-              email: "$$user.email",
-              status: "$$user.status",
-              role: "$$user.role",
-              name: {
-                $let: {
-                  vars: {
-                    profile: {
-                      $arrayElemAt: [
-                        {
-                          $filter: {
-                            input: "$userProfiles",
-                            as: "profile",
-                            cond: { $eq: ["$$profile.user", "$$user._id"] },
-                          },
+        let: { projectId: "$project" },
+        pipeline: [
+          { $match: { $expr: { $eq: ["$project", "$$projectId"] } } },
+          {
+            $lookup: {
+              from: "employeephases",
+              let: { phaseId: "$_id" },
+              pipeline: [
+                { $match: { $expr: { $eq: ["$projectPhase", "$$phaseId"] } } },
+                {
+                  $lookup: {
+                    from: "users",
+                    let: { empId: "$employee" },
+                    pipeline: [
+                      { $match: { $expr: { $eq: ["$_id", "$$empId"] } } },
+                      {
+                        $project: {
+                          _id: 1,
+                          email: 1,
+                          role: 1,
+                          status: 1,
                         },
-                        0,
-                      ],
-                    },
-                  },
-                  in: "$$profile.fullName",
-                },
-              },
-              phone: {
-                $let: {
-                  vars: {
-                    profile: {
-                      $arrayElemAt: [
-                        {
-                          $filter: {
-                            input: "$userProfiles",
-                            as: "profile",
-                            cond: { $eq: ["$$profile.user", "$$user._id"] },
-                          },
-                        },
-                        0,
-                      ],
-                    },
-                  },
-                  in: { $ifNull: ["$$profile.phone", ""] },
-                },
-              },
-              image: {
-                $let: {
-                  vars: {
-                    profile: {
-                      $arrayElemAt: [
-                        {
-                          $filter: {
-                            input: "$userProfiles",
-                            as: "profile",
-                            cond: { $eq: ["$$profile.user", "$$user._id"] },
-                          },
-                        },
-                        0,
-                      ],
-                    },
-                  },
-                  in: { $ifNull: ["$$profile.image", ""] },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-
-    // 9. Find progress of this user in this phase
-    {
-      $addFields: {
-        phaseProgress: {
-          $let: {
-            vars: {
-              myAssignment: {
-                $arrayElemAt: [
-                  {
-                    $filter: {
-                      input: "$phaseAssignments",
-                      as: "pa",
-                      cond: {
-                        $eq: [
-                          "$$pa.employee",
-                          new mongoose.Types.ObjectId(userId),
-                        ],
                       },
-                    },
+                      {
+                        $lookup: {
+                          from: "userprofiles",
+                          let: { uId: "$_id" },
+                          pipeline: [
+                            { $match: { $expr: { $eq: ["$user", "$$uId"] } } },
+                            {
+                              $project: {
+                                _id: 0,
+                                fullName: 1,
+                                image: 1,
+                                phone: 1,
+                              },
+                            },
+                          ],
+                          as: "profile",
+                        },
+                      },
+                      {
+                        $unwind: {
+                          path: "$profile",
+                          preserveNullAndEmptyArrays: true,
+                        },
+                      },
+                    ],
+                    as: "user",
                   },
-                  0,
-                ],
-              },
+                },
+                {
+                  $unwind: { path: "$user", preserveNullAndEmptyArrays: true },
+                },
+              ],
+              as: "assignedEmployees",
             },
-            in: { $ifNull: ["$$myAssignment.progress", 0] },
           },
-        },
-      },
-    },
-
-    // 10. Group phases back into project array, adding userData & phaseProgress inside each phase
-    {
-      $group: {
-        _id: "$project._id",
-        project: { $first: "$project" },
-        phases: {
-          $push: {
-            _id: "$phases._id",
-            name: "$phases.name",
-            budget: "$phases.budget",
-            deadline: "$phases.deadline",
-            status: "$phases.status",
-            project: "$phases.project",
-            createdAt: "$phases.createdAt",
-            updatedAt: "$phases.updatedAt",
-            fixed_kpi: "$phases.fixed_kpi",
-            kpi: "$phases.kpi",
-            userData: "$userData",
-            phaseProgress: "$phaseProgress",
-          },
-        },
+        ],
+        as: "phases",
       },
     },
   ]);

@@ -1,8 +1,7 @@
 import { Types } from "mongoose";
 
-export interface IEmployeeProject {
+export interface IEmployeePhase {
   projectPhase: Types.ObjectId;
-  project: Types.ObjectId;
   employee: Types.ObjectId;
   progress: number;
 }

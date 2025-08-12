@@ -77,14 +77,27 @@ const updateWorkProgress = catchAsync(async (req, res) => {
     data: result,
   });
 });
+
 const getMyProject = catchAsync(async (req, res) => {
-  console.log(req.user.userId);
-  const result = await ProjectService.getMyProject(req.user.userId);
+  const userId = req.user.userId;
+
+  // Get query params with defaults
+  const projectStatus =
+    (req.query.projectStatus as IProjectStatus) || IProjectStatus.ONGOING;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+
+  const result = await ProjectService.getMyProject(
+    userId,
+    projectStatus,
+    page,
+    limit
+  );
 
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,
-    message: "All project of a user fetchedsuccessfully",
+    message: "All projects of user fetched successfully",
     data: result,
   });
 });
