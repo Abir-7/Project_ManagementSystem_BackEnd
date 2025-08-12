@@ -11,6 +11,7 @@ import status from "http-status";
 import { IProjectStatus } from "./project.interface";
 import { IPhaseStatus } from "../project_phase/phase.interface";
 import { EmployeeProject } from "../../relational_table/employee_project_phase/employee_project/employee_project.model";
+import { TeamEmployee } from "../../relational_table/team_employee/team_employee.model";
 
 interface PhaseInput {
   name: string;
@@ -376,13 +377,13 @@ const getMyProject = async (
 ) => {
   const skip = (page - 1) * limit;
 
-  const data = await EmployeeProject.aggregate([
+  // Step 1: Count total items (without skip/limit)
+  const totalItemResult = await EmployeeProject.aggregate([
     {
       $match: {
         employee: new mongoose.Types.ObjectId(userId),
       },
     },
-    // Join projects to filter by projectStatus
     {
       $lookup: {
         from: "projects",
@@ -391,21 +392,42 @@ const getMyProject = async (
         as: "projectDetails",
       },
     },
-    {
-      $unwind: "$projectDetails",
-    },
+    { $unwind: "$projectDetails" },
     {
       $match: {
         "projectDetails.status": projectStatus,
       },
     },
+    { $count: "totalItem" },
+  ]);
+
+  const totalItem =
+    totalItemResult.length > 0 ? totalItemResult[0].totalItem : 0;
+  const totalPage = Math.ceil(totalItem / limit);
+
+  // Step 2: Fetch paginated data
+  const data = await EmployeeProject.aggregate([
     {
-      $skip: skip,
+      $match: {
+        employee: new mongoose.Types.ObjectId(userId),
+      },
     },
     {
-      $limit: limit,
+      $lookup: {
+        from: "projects",
+        localField: "project",
+        foreignField: "_id",
+        as: "projectDetails",
+      },
     },
-    // your existing $lookup to get phases & nested data here...
+    { $unwind: "$projectDetails" },
+    {
+      $match: {
+        "projectDetails.status": projectStatus,
+      },
+    },
+    { $skip: skip },
+    { $limit: limit },
     {
       $lookup: {
         from: "projectphases",
@@ -473,7 +495,185 @@ const getMyProject = async (
     },
   ]);
 
-  return data;
+  return {
+    data,
+    meta: {
+      totalItem,
+      totalPage,
+      limit,
+      page,
+    },
+  };
+};
+
+const getMyTeam = async (userId: string) => {
+  const teamData = await TeamEmployee.findOne({ employee: userId })
+    .populate({
+      path: "team",
+    })
+    .lean();
+  return teamData;
+};
+
+export const getMyTeamProjects = async (
+  teamId: string,
+  page: number = 1,
+  limit: number = 10,
+  searchProject: string = "",
+  projectStatus?: IProjectStatus
+) => {
+  const skip = (page - 1) * limit;
+
+  const teamProjectsData = await TeamProject.aggregate([
+    {
+      $match: {
+        team: new mongoose.Types.ObjectId(teamId),
+      },
+    },
+    {
+      $lookup: {
+        from: "projects",
+        localField: "project",
+        foreignField: "_id",
+        as: "projects",
+        pipeline: [
+          // ✅ Search filter
+          ...(searchProject
+            ? [
+                {
+                  $match: {
+                    $or: [
+                      { name: { $regex: searchProject, $options: "i" } },
+                      { clientName: { $regex: searchProject, $options: "i" } },
+                    ],
+                  },
+                },
+              ]
+            : []),
+
+          // ✅ Status filter
+          ...(projectStatus
+            ? [
+                {
+                  $match: { status: projectStatus },
+                },
+              ]
+            : []),
+
+          // ✅ Populate phases
+          {
+            $lookup: {
+              from: "projectphases",
+              localField: "_id",
+              foreignField: "project",
+              as: "phases",
+              pipeline: [
+                {
+                  $lookup: {
+                    from: "employeephases",
+                    localField: "_id",
+                    foreignField: "projectPhase",
+                    as: "assignedTo",
+                    pipeline: [
+                      {
+                        $lookup: {
+                          from: "users",
+                          localField: "employee",
+                          foreignField: "_id",
+                          as: "userData",
+                          pipeline: [
+                            {
+                              $project: {
+                                _id: 1,
+                                email: 1,
+                                role: 1,
+                                status: 1,
+                              },
+                            },
+                            {
+                              $lookup: {
+                                from: "userprofiles",
+                                localField: "_id",
+                                foreignField: "user",
+                                as: "profile",
+                                pipeline: [
+                                  {
+                                    $project: {
+                                      _id: 0,
+                                      fullName: 1,
+                                      phone: 1,
+                                      image: 1,
+                                    },
+                                  },
+                                ],
+                              },
+                            },
+                            {
+                              $unwind: {
+                                path: "$profile",
+                                preserveNullAndEmptyArrays: true,
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        $unwind: {
+                          path: "$userData",
+                          preserveNullAndEmptyArrays: true,
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      $unwind: "$projects",
+    },
+
+    // ✅ Data + meta
+    {
+      $facet: {
+        meta: [{ $count: "totalItem" }],
+        data: [{ $skip: skip }, { $limit: limit }],
+      },
+    },
+    {
+      $unwind: {
+        path: "$meta",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $addFields: {
+        "meta.totalPage": {
+          $ceil: {
+            $divide: ["$meta.totalItem", limit],
+          },
+        },
+        "meta.limit": limit,
+        "meta.page": page,
+      },
+    },
+  ]);
+
+  return {
+    data: teamProjectsData.length > 0 ? teamProjectsData[0].data : [],
+    meta:
+      teamProjectsData.length > 0
+        ? {
+            totalItem: teamProjectsData[0].meta?.totalItem || 0,
+            totalPage: teamProjectsData[0].meta?.totalPage || 0,
+            limit,
+            page,
+          }
+        : { totalItem: 0, totalPage: 0, limit, page },
+  };
 };
 
 export const ProjectService = {
@@ -483,4 +683,6 @@ export const ProjectService = {
   assignEmployeeToProject,
   updateWorkProgress,
   getMyProject,
+  getMyTeam,
+  getMyTeamProjects,
 };

@@ -28,6 +28,18 @@ router.get(
   ProjectController.getMyProject
 );
 
+router.get(
+  "/get-my-team",
+  auth("SUPERVISOR", "LEADER", "EMPLOYEE"),
+  ProjectController.getMyTeam
+);
+
+router.get(
+  "/get-my-team-projects/:teamId",
+  auth("SUPERVISOR", "LEADER", "EMPLOYEE"),
+  ProjectController.getMyTeamProjects
+);
+
 router.post(
   "/add",
   auth("SUPERVISOR", "LEADER"),

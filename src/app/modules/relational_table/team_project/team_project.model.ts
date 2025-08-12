@@ -22,6 +22,8 @@ const TeamProjectSchema = new Schema<ITeamProject>(
 // Optional: prevent duplicate team-project assignments
 TeamProjectSchema.index({ team: 1, project: 1 }, { unique: true });
 
+TeamProjectSchema.index({ project: 1 }, { unique: true });
+
 export const TeamProject = model<ITeamProject>(
   "TeamProject",
   TeamProjectSchema
