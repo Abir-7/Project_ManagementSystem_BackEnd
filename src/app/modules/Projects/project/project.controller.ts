@@ -34,7 +34,8 @@ const getAllProject = catchAsync(async (req, res) => {
     success: true,
     statusCode: httpStatus.CREATED,
     message: "All Project fetched successfully",
-    data: result,
+    data: result.data,
+    meta: result.meta,
   });
 });
 

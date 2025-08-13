@@ -123,9 +123,9 @@ const getAllProject = async (
     matchConditions.status = projectStatus;
   }
 
-  const projects = await Project.aggregate([
+  // Build base pipeline (without pagination)
+  const basePipeline: any[] = [
     { $match: matchConditions },
-
     {
       $lookup: {
         from: "teamprojects",
@@ -134,7 +134,6 @@ const getAllProject = async (
         as: "teamProjects",
       },
     },
-
     ...(teamId
       ? [
           {
@@ -144,7 +143,6 @@ const getAllProject = async (
           },
         ]
       : []),
-
     {
       $lookup: {
         from: "projectphases",
@@ -153,13 +151,34 @@ const getAllProject = async (
         as: "phases",
       },
     },
+  ];
 
+  // First, get total item count
+  const totalItemResult = await Project.aggregate([
+    ...basePipeline,
+    { $count: "count" },
+  ]);
+
+  const totalItem = totalItemResult.length > 0 ? totalItemResult[0].count : 0;
+  const totalPage = Math.ceil(totalItem / limit);
+
+  // Then, get paginated results
+  const projects = await Project.aggregate([
+    ...basePipeline,
     { $sort: { createdAt: -1 } },
     { $skip: (page - 1) * limit },
     { $limit: limit },
   ]);
 
-  return projects;
+  return {
+    data: projects,
+    meta: {
+      totalItem,
+      totalPage,
+      limit,
+      page,
+    },
+  };
 };
 
 const getPhaseDetails = async (phaseId: string) => {
