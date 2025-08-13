@@ -32,7 +32,7 @@ const saveProjectValuations = async (data: ValuationTypeInput[]) => {
 
       // Prepare phase docs with reference
       const phaseDocs = valuationType.phases.map((phase) => ({
-        project_valuation_type: savedType[0]._id,
+        projectValuationType: savedType[0]._id,
         phase: phase.phase,
         percent: phase.percent,
       }));
@@ -56,7 +56,7 @@ const getValuationData = async () => {
     {
       $lookup: {
         from: "projectvaluationtypes",
-        localField: "project_valuation_type",
+        localField: "projectValuationType",
         foreignField: "_id",
         as: "valuationTypeDetails",
       },
@@ -64,7 +64,7 @@ const getValuationData = async () => {
     { $unwind: "$valuationTypeDetails" },
     {
       $group: {
-        _id: "$project_valuation_type",
+        _id: "$projectValuationType",
         projectValuationType: { $first: "$valuationTypeDetails.type" },
         fixedPercent: { $first: "$valuationTypeDetails.fixedPercent" },
         phases: {

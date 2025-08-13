@@ -171,7 +171,7 @@ const getPhaseDetails = async (phaseId: string) => {
     },
     {
       $lookup: {
-        from: "employeeprojects",
+        from: "employeephases",
         localField: "_id",
         foreignField: "projectPhase",
         as: "employeeAssignments",

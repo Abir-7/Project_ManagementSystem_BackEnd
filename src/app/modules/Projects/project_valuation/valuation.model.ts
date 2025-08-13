@@ -17,7 +17,7 @@ const ProjectValuationTypeSchema = new Schema<IProjectValuationType>(
 // Project Valuation Schema
 const ProjectValuationSchema = new Schema<IProjectValuation>(
   {
-    project_valuation_type: {
+    projectValuationType: {
       type: Schema.Types.ObjectId,
       ref: "ProjectValuationType",
       required: true,

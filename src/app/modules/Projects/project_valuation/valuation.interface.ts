@@ -6,7 +6,7 @@ export interface IProjectValuationType {
 }
 
 export interface IProjectValuation {
-  project_valuation_type: Types.ObjectId;
+  projectValuationType: Types.ObjectId;
   phase: IProjectValuationPhase;
   percent: number;
 }
