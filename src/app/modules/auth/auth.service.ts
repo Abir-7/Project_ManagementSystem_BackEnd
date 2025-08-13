@@ -87,7 +87,7 @@ const createUser = async (
 
     if (data.role === "EMPLOYEE" && authRole === "SUPERVISOR") {
       await SupervisorEmployee.create(
-        [{ employee: createdUser[0]._id, present_supervisor: userId }],
+        [{ employee: createdUser[0]._id, supervisor: userId }],
         { session }
       );
     }
@@ -429,7 +429,6 @@ const reSendOtp = async (userEmail: string): Promise<{ message: string }> => {
 };
 export const AuthService = {
   createUser,
-
   userLogin,
   verifyUser,
   forgotPasswordRequest,
