@@ -6,11 +6,8 @@ import { ZodProjectSchema } from "./project.validation";
 
 const router = Router();
 
-router.get(
-  "/get-all",
-  auth("SUPERVISOR", "LEADER"),
-  ProjectController.getAllProject
-);
+router.get("/get-all", auth("SUPERVISOR"), ProjectController.getAllProject);
+
 router.get(
   "/get-phase-details/:phaseId",
   auth("SUPERVISOR", "LEADER", "EMPLOYEE"),
@@ -26,12 +23,6 @@ router.get(
   "/get-my-projects",
   auth("SUPERVISOR", "LEADER", "EMPLOYEE"),
   ProjectController.getMyProject
-);
-
-router.get(
-  "/get-my-team",
-  auth("SUPERVISOR", "LEADER", "EMPLOYEE"),
-  ProjectController.getMyTeam
 );
 
 router.get(
@@ -51,6 +42,12 @@ router.post(
   "/assign-employee-to-project",
   auth("SUPERVISOR", "LEADER"),
   ProjectController.assignEmployeeToProject
+);
+
+router.get(
+  "/get-project-status-list",
+  auth("SUPERVISOR", "LEADER", "EMPLOYEE", "ADMIN"),
+  ProjectController.getProjectStatusList
 );
 
 export const ProjectRoute = router;

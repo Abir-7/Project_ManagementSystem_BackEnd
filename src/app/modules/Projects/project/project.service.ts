@@ -11,7 +11,7 @@ import status from "http-status";
 import { IProjectStatus } from "./project.interface";
 import { IPhaseStatus } from "../project_phase/phase.interface";
 import { EmployeeProject } from "../../relational_table/employee_project_phase/employee_project/employee_project.model";
-import { TeamEmployee } from "../../relational_table/team_employee/team_employee.model";
+import { TeamSupervisor } from "../../relational_table/team_supervisor/team.supervisor.model";
 
 interface PhaseInput {
   name: string;
@@ -102,82 +102,110 @@ const addProject = async (data: AddProjectInput) => {
 };
 
 const getAllProject = async (
-  page: number,
-  limit: number,
-  searchTerm: string,
+  page: number = 1,
+  limit: number = 10,
+  searchTerm: string = "",
+  supervisorId: string,
   teamId?: string,
-  projectStatus?: IProjectStatus
+  projectStatus?: IProjectStatus | "ALL"
 ) => {
-  const matchConditions: any = {};
+  const skip = (page - 1) * limit;
 
-  // Search filter
+  // 1. Get all teams supervised by this supervisor
+  const supervisedTeams = await TeamSupervisor.find({
+    supervisor: supervisorId,
+  }).select("team");
+  const teamIds = supervisedTeams.map((t) => t.team.toString());
+
+  // 2. Filter by teamId if provided
+  const filteredTeamIds = teamId
+    ? teamIds.filter((id) => id === teamId)
+    : teamIds;
+
+  if (!filteredTeamIds.length) {
+    // no teams, return empty
+    return {
+      data: [],
+      meta: { totalItem: 0, totalPage: 0, limit, page },
+    };
+  }
+
+  // 3. Separate match stages
+  const teamMatchStage: any = {
+    team: { $in: filteredTeamIds.map((id) => new mongoose.Types.ObjectId(id)) },
+  };
+
+  const projectMatchStage: any = {};
+  if (projectStatus && projectStatus !== "ALL") {
+    projectMatchStage["projectDoc.status"] = projectStatus;
+  }
   if (searchTerm) {
-    matchConditions.$or = [
-      { name: { $regex: searchTerm, $options: "i" } },
-      { clientName: { $regex: searchTerm, $options: "i" } },
+    projectMatchStage.$or = [
+      { "projectDoc.name": { $regex: searchTerm, $options: "i" } },
+      { "projectDoc.clientName": { $regex: searchTerm, $options: "i" } },
     ];
   }
 
-  // Project status filter
-  if (projectStatus) {
-    matchConditions.status = projectStatus;
-  }
-
-  // Build base pipeline (without pagination)
-  const basePipeline: any[] = [
-    { $match: matchConditions },
+  // 4. Aggregate projects
+  const projectsAggregation = await TeamProject.aggregate([
+    { $match: teamMatchStage }, // filter TeamProject
     {
       $lookup: {
-        from: "teamprojects",
-        localField: "_id",
-        foreignField: "project",
-        as: "teamProjects",
+        from: "projects",
+        localField: "project",
+        foreignField: "_id",
+        as: "projectDoc",
       },
     },
-    ...(teamId
-      ? [
-          {
-            $match: {
-              "teamProjects.team": new mongoose.Types.ObjectId(teamId),
-            },
-          },
-        ]
-      : []),
+    { $unwind: "$projectDoc" },
     {
       $lookup: {
         from: "projectphases",
-        localField: "_id",
+        localField: "project",
         foreignField: "project",
         as: "phases",
       },
     },
-  ];
-
-  // First, get total item count
-  const totalItemResult = await Project.aggregate([
-    ...basePipeline,
-    { $count: "count" },
+    { $match: projectMatchStage }, // filter projectDoc fields
+    { $sort: { "projectDoc.createdAt": -1 } },
+    { $skip: skip },
+    { $limit: limit },
+    {
+      $project: {
+        _id: "$projectDoc._id",
+        name: "$projectDoc.name",
+        clientName: "$projectDoc.clientName",
+        budget: "$projectDoc.budget",
+        duration: "$projectDoc.duration",
+        salesName: "$projectDoc.salesName",
+        status: "$projectDoc.status",
+        phases: 1,
+      },
+    },
   ]);
 
-  const totalItem = totalItemResult.length > 0 ? totalItemResult[0].count : 0;
+  // 5. Total count for pagination
+  const totalItemAgg = await TeamProject.aggregate([
+    { $match: teamMatchStage },
+    {
+      $lookup: {
+        from: "projects",
+        localField: "project",
+        foreignField: "_id",
+        as: "projectDoc",
+      },
+    },
+    { $unwind: "$projectDoc" },
+    { $match: projectMatchStage },
+    { $count: "total" },
+  ]);
+
+  const totalItem = totalItemAgg[0]?.total || 0;
   const totalPage = Math.ceil(totalItem / limit);
 
-  // Then, get paginated results
-  const projects = await Project.aggregate([
-    ...basePipeline,
-    { $sort: { createdAt: -1 } },
-    { $skip: (page - 1) * limit },
-    { $limit: limit },
-  ]);
-
   return {
-    data: projects,
-    meta: {
-      totalItem,
-      totalPage,
-      limit,
-      page,
-    },
+    data: projectsAggregation,
+    meta: { totalItem, totalPage, limit, page },
   };
 };
 
@@ -525,15 +553,6 @@ const getMyProject = async (
   };
 };
 
-const getMyTeam = async (userId: string) => {
-  const teamData = await TeamEmployee.findOne({ employee: userId })
-    .populate({
-      path: "team",
-    })
-    .lean();
-  return teamData;
-};
-
 export const getMyTeamProjects = async (
   teamId: string,
   page: number = 1,
@@ -695,6 +714,14 @@ export const getMyTeamProjects = async (
   };
 };
 
+const getProjectStatusList = async () => {
+  const statusList = Object.values(IProjectStatus).map((statusData) => ({
+    name: statusData,
+    value: statusData,
+  }));
+  return statusList;
+};
+
 export const ProjectService = {
   addProject,
   getAllProject,
@@ -702,6 +729,6 @@ export const ProjectService = {
   assignEmployeeToProject,
   updateWorkProgress,
   getMyProject,
-  getMyTeam,
+  getProjectStatusList,
   getMyTeamProjects,
 };

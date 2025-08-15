@@ -79,14 +79,20 @@ const getAllUserUnderASupervisor = async (
   page: number = 1,
   limit: number = 10,
   searchTerm: string = "",
-  teamId: string = "all", // "all" | "no-team" | <teamId>
-  supervisorId?: string
+  teamId: string = "ALL", // "all" | "no-team" |
+  supervisorId?: string,
+  employeeStatus: UserStatus | "ALL" = "ALL"
 ) => {
+  console.log(employeeStatus, "-------------", teamId);
   const skip = (page - 1) * limit;
 
   const andConditions: any[] = [
     { role: { $in: [userRoles.EMPLOYEE, userRoles.LEADER] } },
   ];
+
+  if (employeeStatus && employeeStatus !== "ALL") {
+    andConditions.push({ status: employeeStatus });
+  }
 
   // Search filter
   if (searchTerm) {
@@ -152,7 +158,7 @@ const getAllUserUnderASupervisor = async (
   ];
 
   // Apply teamId filter
-  if (teamId !== "all") {
+  if (teamId !== "ALL") {
     if (teamId === "no-team") {
       andConditions.push({ "teamRelation.team": { $exists: false } });
     } else {
@@ -186,7 +192,7 @@ const getAllUserUnderASupervisor = async (
   ];
 
   const data = await User.aggregate(resultPipeline);
-  console.log(data);
+
   const simplifiedData = data.map((item) => ({
     _id: item._id,
     email: item.email,
@@ -205,7 +211,13 @@ const getAllUserUnderASupervisor = async (
   };
 };
 
-export default getAllUserUnderASupervisor;
+const getAllEmloyeeStatusList = async () => {
+  const statusList = Object.values(UserStatus).map((statusData) => ({
+    name: statusData,
+    value: statusData,
+  }));
+  return statusList;
+};
 
 export const UserService = {
   updateUserRole,
@@ -213,4 +225,5 @@ export const UserService = {
   getMyData,
 
   getAllUserUnderASupervisor,
+  getAllEmloyeeStatusList,
 };

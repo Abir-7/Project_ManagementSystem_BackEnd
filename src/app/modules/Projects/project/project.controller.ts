@@ -26,13 +26,14 @@ const getAllProject = catchAsync(async (req, res) => {
     page,
     limit,
     searchTerm,
-    teamId,
+    req.user.userId,
+    teamId as string,
     projectStatus
   );
 
   sendResponse(res, {
     success: true,
-    statusCode: httpStatus.CREATED,
+    statusCode: httpStatus.OK,
     message: "All Project fetched successfully",
     data: result.data,
     meta: result.meta,
@@ -44,7 +45,7 @@ const getPhaseDetails = catchAsync(async (req, res) => {
 
   sendResponse(res, {
     success: true,
-    statusCode: httpStatus.CREATED,
+    statusCode: httpStatus.OK,
     message: "Phase details fetched successfully",
     data: result,
   });
@@ -58,7 +59,7 @@ const assignEmployeeToProject = catchAsync(async (req, res) => {
 
   sendResponse(res, {
     success: true,
-    statusCode: httpStatus.CREATED,
+    statusCode: httpStatus.OK,
     message: "Employee assign to a project phase successfully",
     data: result,
   });
@@ -104,19 +105,6 @@ const getMyProject = catchAsync(async (req, res) => {
   });
 });
 
-const getMyTeam = catchAsync(async (req, res) => {
-  const userId = req.user.userId;
-
-  const result = await ProjectService.getMyTeam(userId);
-
-  sendResponse(res, {
-    success: true,
-    statusCode: httpStatus.OK,
-    message: "Team of user fetched successfully",
-    data: result,
-  });
-});
-
 const getMyTeamProjects = catchAsync(async (req, res) => {
   const teamId = req.params.teamId;
 
@@ -142,6 +130,16 @@ const getMyTeamProjects = catchAsync(async (req, res) => {
     meta: result.meta,
   });
 });
+const getProjectStatusList = catchAsync(async (req, res) => {
+  const result = await ProjectService.getProjectStatusList();
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Project status list fetched successfully",
+    data: result,
+  });
+});
 
 export const ProjectController = {
   addProject,
@@ -150,6 +148,6 @@ export const ProjectController = {
   assignEmployeeToProject,
   updateWorkProgress,
   getMyProject,
-  getMyTeam,
   getMyTeamProjects,
+  getProjectStatusList,
 };

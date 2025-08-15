@@ -22,11 +22,15 @@ const createTeam = catchAsync(async (req, res) => {
 const assignEmployeeToTeam = catchAsync(async (req, res) => {
   const { userId, teamId } = req.body;
 
-  const result = await TeamService.assignEmployeeToTeam(userId, teamId);
+  const result = await TeamService.assignEmployeeToTeam(
+    userId,
+    teamId,
+    req.user.userId
+  );
 
   sendResponse(res, {
     success: true,
-    statusCode: httpStatus.CREATED,
+    statusCode: httpStatus.OK,
     message: "Employee assinged to a team successfully",
     data: result,
   });
@@ -35,11 +39,15 @@ const assignEmployeeToTeam = catchAsync(async (req, res) => {
 const assignEmployeeToNewTeam = catchAsync(async (req, res) => {
   const { userId, teamId } = req.body;
 
-  const result = await TeamService.assignEmployeeToNewTeam(userId, teamId);
+  const result = await TeamService.assignEmployeeToNewTeam(
+    userId,
+    teamId,
+    req.user.userId
+  );
 
   sendResponse(res, {
     success: true,
-    statusCode: httpStatus.CREATED,
+    statusCode: httpStatus.OK,
     message: "Employee assinged to a new team successfully",
     data: result,
   });
@@ -57,14 +65,15 @@ const getTeamList = catchAsync(async (req, res) => {
     Number(page),
     Number(limit),
     searchTerm as string,
-    teamStatus
+    teamStatus,
+    req.user.userId
   );
 
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,
     message: "Team list fetched successfully",
-    data: result.simplifiedData,
+    data: result.data,
     meta: result.meta,
   });
 });
@@ -85,11 +94,83 @@ const splitTeam = catchAsync(async (req, res) => {
     data: result,
   });
 });
+const teamDetails = catchAsync(async (req, res) => {
+  const result = await TeamService.teamDetails(
+    req.params.tId,
+    req.user.userId,
+    req.user.userRole
+  );
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Team details fetched successfully",
+    data: result,
+  });
+});
+
+const getEmployeeOfTeam = catchAsync(async (req, res) => {
+  const result = await TeamService.getEmployeeOfTeam(
+    req.params.tId,
+    req.query.searchTerm as string,
+    req.user.userId,
+    req.user.userRole
+  );
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Member of a team fetched successfully",
+    data: result,
+  });
+});
+
+const getMyTeam = catchAsync(async (req, res) => {
+  const userId = req.user.userId;
+
+  const result = await TeamService.getMyTeam(userId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Team of user fetched successfully",
+    data: result,
+  });
+});
+
+const getTeamListForFilterSuperVisor = catchAsync(async (req, res) => {
+  const userId = req.user.userId;
+
+  const result = await TeamService.getTeamListForFilterSuperVisor(userId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Team list fetched successfully",
+    data: result,
+  });
+});
+
+const getAllStausListOfTeam = catchAsync(async (req, res) => {
+  const result = await TeamService.getAllStausListOfTeam();
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Team status list fetched successfully",
+    data: result,
+  });
+});
 
 export const TeamController = {
   createTeam,
   assignEmployeeToTeam,
   assignEmployeeToNewTeam,
   getTeamList,
+  teamDetails,
+  getEmployeeOfTeam,
   splitTeam,
+  getMyTeam,
+  getTeamListForFilterSuperVisor,
+  getAllStausListOfTeam,
 };

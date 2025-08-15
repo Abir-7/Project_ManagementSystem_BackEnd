@@ -16,6 +16,11 @@ router.patch(
   auth("SUPERVISOR"),
   UserController.updateUserStatus
 );
+router.get(
+  "/employee-status-list",
+  auth("SUPERVISOR"),
+  UserController.getAllEmloyeeStatusList
+);
 
 router.get(
   "/me",
