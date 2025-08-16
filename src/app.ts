@@ -17,6 +17,7 @@ const corsOption = {
     "http://10.10.12.62:3000",
     "http://localhost:3000",
     "http://192.168.50.161:3000",
+    "http://localhost:3001",
     "http://10.10.12.62:3000",
   ], // need to add real htp link like "https://yourdomain.com", "http://localhost:3000"
   methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
