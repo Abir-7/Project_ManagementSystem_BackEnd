@@ -1,71 +1,46 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 
-import status from "http-status";
 import { TUserRole, userRoles } from "../../../interface/auth.interface";
 import { UserProfile } from "../user_profile/userProfile.model";
 import User from "./user.model";
 import { PipelineStage, Types } from "mongoose";
-import AppError from "../../../errors/AppError";
+
 import { UserStatus } from "./user.interface";
 
-const updateUserRole = async (
-  data: { userId: string; role: TUserRole },
-  authRole: TUserRole
-) => {
-  if (authRole === userRoles.ADMIN && data.role !== userRoles.SUPERVISOR) {
-    throw new AppError(
-      status.BAD_REQUEST,
-      `ADMIN can only assign the ${userRoles.SUPERVISOR} role`
-    );
-  }
-
-  if (
-    authRole === userRoles.SUPERVISOR &&
-    data.role !== userRoles.LEADER &&
-    data.role !== userRoles.EMPLOYEE
-  ) {
-    throw new AppError(
-      status.BAD_REQUEST,
-      `SUPERVISOR can only assign the ${userRoles.LEADER} &  ${userRoles.EMPLOYEE} role`
-    );
-  }
-
-  const user = await User.findOneAndUpdate(
-    { _id: data.userId },
-    { role: data.role },
-    { new: true }
-  );
-  if (!user) {
-    throw new AppError(status.NOT_FOUND, "Role not updated.");
-  }
-  return user;
-};
-const updateUserStatus = async (
+const updateUserStatusRole = async (
   userId: string,
-  userStatus: UserStatus, // Use enum type here for clarity
-  authRole: TUserRole
+  userStatus?: UserStatus,
+  userRole?: TUserRole,
+  authRole?: TUserRole
 ) => {
-  // Example role-based permission check
+  // Role-based permission check
   if (authRole !== "SUPERVISOR") {
-    throw new Error("Unauthorized to update user status");
+    throw new Error("Unauthorized to update user status/role");
   }
 
-  // Validate status is a valid UserStatus enum value
-  if (!Object.values(UserStatus).includes(userStatus)) {
+  // Validate status if provided
+  if (userStatus && !Object.values(UserStatus).includes(userStatus)) {
     throw new Error("Invalid status value");
   }
 
-  // Update user status
-  const updatedUser = await User.findByIdAndUpdate(
-    userId,
-    { status: userStatus },
-    { new: true, runValidators: true }
-  );
+  // Validate role if provided
+  if (userRole && !Object.values(userRoles).includes(userRole)) {
+    throw new Error("Invalid role value");
+  }
 
+  // Find user
+  const updatedUser = await User.findById(userId);
   if (!updatedUser) {
     throw new Error("User not found");
   }
+
+  // Update fields if provided
+  if (userStatus) updatedUser.status = userStatus;
+  if (userRole) updatedUser.role = userRole;
+
+  // Save changes
+  await updatedUser.save();
 
   return updatedUser;
 };
@@ -83,7 +58,6 @@ const getAllUserUnderASupervisor = async (
   supervisorId?: string,
   employeeStatus: UserStatus | "ALL" = "ALL"
 ) => {
-  console.log(employeeStatus, "-------------", teamId);
   const skip = (page - 1) * limit;
 
   const andConditions: any[] = [
@@ -220,8 +194,8 @@ const getAllEmloyeeStatusList = async () => {
 };
 
 export const UserService = {
-  updateUserRole,
-  updateUserStatus,
+  updateUserStatusRole,
+
   getMyData,
 
   getAllUserUnderASupervisor,

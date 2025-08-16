@@ -6,15 +6,9 @@ import { auth } from "../../../middleware/auth/auth";
 const router = Router();
 
 router.patch(
-  "/update-role",
-  auth("ADMIN", "SUPERVISOR"),
-  UserController.updateUserRole
-);
-
-router.patch(
-  "/update-status",
+  "/update-status-role",
   auth("SUPERVISOR"),
-  UserController.updateUserStatus
+  UserController.updateUserStatusRole
 );
 router.get(
   "/employee-status-list",

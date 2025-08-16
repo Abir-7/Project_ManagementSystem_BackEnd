@@ -109,6 +109,15 @@ const reSendOtp = catchAsync(async (req, res) => {
     message: "Verification Code send successfully",
   });
 });
+const getAllUserRoles = catchAsync(async (req, res) => {
+  const result = await AuthService.getAllUserRoles(req.user.userRole);
+  sendResponse(res, {
+    data: result,
+    success: true,
+    statusCode: status.OK,
+    message: "User roles fetched successfully",
+  });
+});
 
 export const AuthController = {
   createUser,
@@ -120,4 +129,5 @@ export const AuthController = {
   getNewAccessToken,
   updatePassword,
   reSendOtp,
+  getAllUserRoles,
 };

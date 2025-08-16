@@ -4,23 +4,12 @@ import sendResponse from "../../../utils/serverTools/sendResponse";
 import { UserService } from "./user.service";
 import { UserStatus } from "./user.interface";
 
-const updateUserRole = catchAsync(async (req, res) => {
-  const userData = req.body;
-  const result = await UserService.updateUserRole(userData, req.user.userRole);
-
-  sendResponse(res, {
-    success: true,
-    statusCode: status.OK,
-    message: "User role  successfully updated",
-    data: result,
-  });
-});
-
-const updateUserStatus = catchAsync(async (req, res) => {
-  const { userId, status: userStatus } = req.body;
-  const result = await UserService.updateUserStatus(
+const updateUserStatusRole = catchAsync(async (req, res) => {
+  const { role, status: userStatus, userId } = req.body;
+  const result = await UserService.updateUserStatusRole(
     userId,
     userStatus,
+    role,
     req.user.userRole
   );
 
@@ -65,7 +54,7 @@ const getEmployeeListOfSupervisor = catchAsync(async (req, res) => {
   sendResponse(res, {
     success: true,
     statusCode: status.OK,
-    message: "Supervisor data is fetched successfully",
+    message: "Supervisor employee list data is fetched successfully",
     data: result.simplifiedData,
     meta: result.meta,
   });
@@ -82,8 +71,7 @@ const getAllEmloyeeStatusList = catchAsync(async (req, res) => {
 });
 
 export const UserController = {
-  updateUserRole,
-  updateUserStatus,
+  updateUserStatusRole,
   getMyData,
   getEmployeeListOfSupervisor,
   getAllEmloyeeStatusList,

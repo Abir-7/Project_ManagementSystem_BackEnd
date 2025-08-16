@@ -7,6 +7,12 @@ import { zodCreateUserSchema } from "./auth.validation";
 
 const router = Router();
 
+router.get(
+  "/get-user-roles",
+  auth("SUPERVISOR", "ADMIN"),
+  AuthController.getAllUserRoles
+);
+
 router.post(
   "/create-user",
   auth("ADMIN", "SUPERVISOR"),

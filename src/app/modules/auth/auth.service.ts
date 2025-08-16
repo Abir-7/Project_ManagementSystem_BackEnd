@@ -427,6 +427,22 @@ const reSendOtp = async (userEmail: string): Promise<{ message: string }> => {
   await sendEmail(userEmail, "Verification Code", `CODE: ${OTP}`);
   return { message: "Verification code send." };
 };
+
+const getAllUserRoles = async (role: TUserRole) => {
+  const userRolesArray = Object.entries(userRoles).map(([key, value]) => ({
+    name: key,
+    value,
+  }));
+
+  console.log(userRolesArray);
+  if (role === userRoles.SUPERVISOR) {
+    return userRolesArray.filter(
+      (r) => r.value === userRoles.EMPLOYEE || r.value === userRoles.LEADER
+    );
+  }
+
+  return userRolesArray;
+};
 export const AuthService = {
   createUser,
   userLogin,
@@ -436,4 +452,5 @@ export const AuthService = {
   getNewAccessToken,
   updatePassword,
   reSendOtp,
+  getAllUserRoles,
 };
