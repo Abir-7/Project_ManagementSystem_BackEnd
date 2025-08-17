@@ -5,6 +5,7 @@ import { UserProfileRoute } from "../modules/users/user_profile/userProfile.rout
 import { TeamRoute } from "../modules/team/team.route";
 import { ProjectRoute } from "../modules/Projects/project/project.route";
 import { ProjectValuationRoute } from "../modules/Projects/project_valuation/valuation.route";
+import { DeliveryRoute } from "../modules/delivery/delivery.route";
 
 const router = Router();
 const apiRoutes = [
@@ -14,6 +15,7 @@ const apiRoutes = [
   { path: "/team", route: TeamRoute },
   { path: "/project", route: ProjectRoute },
   { path: "/project-valuation", route: ProjectValuationRoute },
+  { path: "/delivery", route: DeliveryRoute },
 ];
 apiRoutes.forEach((route) => router.use(route.path, route.route));
 export default router;
