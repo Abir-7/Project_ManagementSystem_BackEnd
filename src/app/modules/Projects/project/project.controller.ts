@@ -106,7 +106,7 @@ const getMyProject = catchAsync(async (req, res) => {
 });
 
 const getMyTeamProjects = catchAsync(async (req, res) => {
-  const teamId = req.params.teamId;
+  const userId = req.user.userId;
 
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
@@ -115,7 +115,7 @@ const getMyTeamProjects = catchAsync(async (req, res) => {
   const projectStatus = req.query.projectStatus as IProjectStatus;
 
   const result = await ProjectService.getMyTeamProjects(
-    teamId,
+    userId,
     page,
     limit,
     searchProject,
@@ -130,6 +130,7 @@ const getMyTeamProjects = catchAsync(async (req, res) => {
     meta: result.meta,
   });
 });
+
 const getProjectStatusList = catchAsync(async (req, res) => {
   const result = await ProjectService.getProjectStatusList();
 

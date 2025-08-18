@@ -26,8 +26,8 @@ router.get(
 );
 
 router.get(
-  "/get-my-team-projects/:teamId",
-  auth("SUPERVISOR", "LEADER", "EMPLOYEE"),
+  "/get-my-team-projects",
+  auth("LEADER", "EMPLOYEE"),
   ProjectController.getMyTeamProjects
 );
 

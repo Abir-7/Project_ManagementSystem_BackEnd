@@ -12,6 +12,7 @@ import { IProjectStatus } from "./project.interface";
 import { IPhaseStatus } from "../project_phase/phase.interface";
 import { EmployeeProject } from "../../relational_table/employee_project_phase/employee_project/employee_project.model";
 import { TeamSupervisor } from "../../relational_table/team_supervisor/team.supervisor.model";
+import { TeamEmployee } from "../../relational_table/team_employee/team_employee.model";
 
 interface PhaseInput {
   name: string;
@@ -554,13 +555,21 @@ const getMyProject = async (
 };
 
 export const getMyTeamProjects = async (
-  teamId: string,
+  userId: string,
   page: number = 1,
   limit: number = 10,
   searchProject: string = "",
   projectStatus?: IProjectStatus
 ) => {
   const skip = (page - 1) * limit;
+
+  const teamData = await TeamEmployee.findOne({ employee: userId });
+
+  if (!teamData) {
+    throw new AppError(404, "Team id not found");
+  }
+
+  const teamId = teamData.team;
 
   const teamProjectsData = await TeamProject.aggregate([
     {
