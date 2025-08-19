@@ -210,6 +210,11 @@ const getAllProject = async (
   };
 };
 
+const getProjectData = async (projectId: string) => {
+  const data = await Project.findOne({ _id: projectId });
+  return data;
+};
+
 const getPhaseDetails = async (phaseId: string) => {
   const phase = await ProjectPhase.aggregate([
     {
@@ -740,4 +745,5 @@ export const ProjectService = {
   getMyProject,
   getProjectStatusList,
   getMyTeamProjects,
+  getProjectData,
 };

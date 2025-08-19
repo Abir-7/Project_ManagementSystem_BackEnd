@@ -9,6 +9,12 @@ const router = Router();
 router.get("/get-all", auth("SUPERVISOR"), ProjectController.getAllProject);
 
 router.get(
+  "/get-single-project/:projectId",
+  auth("SUPERVISOR", "LEADER", "EMPLOYEE"),
+  ProjectController.getProjectData
+);
+
+router.get(
   "/get-phase-details/:phaseId",
   auth("SUPERVISOR", "LEADER", "EMPLOYEE"),
   ProjectController.getPhaseDetails

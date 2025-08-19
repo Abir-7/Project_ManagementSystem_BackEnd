@@ -40,6 +40,16 @@ const getAllProject = catchAsync(async (req, res) => {
   });
 });
 
+const getProjectData = catchAsync(async (req, res) => {
+  const result = await ProjectService.getProjectData(req.params.projectId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Project data is fetched successfully",
+    data: result,
+  });
+});
 const getPhaseDetails = catchAsync(async (req, res) => {
   const result = await ProjectService.getPhaseDetails(req.params.phaseId);
 
@@ -145,6 +155,7 @@ const getProjectStatusList = catchAsync(async (req, res) => {
 export const ProjectController = {
   addProject,
   getAllProject,
+  getProjectData,
   getPhaseDetails,
   assignEmployeeToProject,
   updateWorkProgress,
