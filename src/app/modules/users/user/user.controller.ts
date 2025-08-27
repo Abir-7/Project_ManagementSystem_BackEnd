@@ -16,7 +16,7 @@ const updateUserStatusRole = catchAsync(async (req, res) => {
   sendResponse(res, {
     success: true,
     statusCode: status.OK,
-    message: "User role  successfully updated",
+    message: "User role/status  successfully updated",
     data: result,
   });
 });
@@ -69,6 +69,7 @@ const getAllEmloyeeStatusList = catchAsync(async (req, res) => {
     data: result,
   });
 });
+
 const getSupervisorList = catchAsync(async (req, res) => {
   const result = await UserService.getSupervisorList(
     req.query.status as UserStatus,
