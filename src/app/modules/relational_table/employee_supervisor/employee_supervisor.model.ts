@@ -18,7 +18,8 @@ const SupervisorEmployeeSchema = new Schema<ISupervisorEmployee>(
     timestamps: true, // createdAt, updatedAt
   }
 );
-
+SupervisorEmployeeSchema.index({ supervisor: 1 });
+SupervisorEmployeeSchema.index({ employee: 1 });
 export const SupervisorEmployee = model<ISupervisorEmployee>(
   "SupervisorEmployee",
   SupervisorEmployeeSchema

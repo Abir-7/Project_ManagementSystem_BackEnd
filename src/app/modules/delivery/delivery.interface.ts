@@ -5,4 +5,5 @@ export interface IDelivery {
   employee: Types.ObjectId;
   project: Types.ObjectId;
   supervisor: Types.ObjectId;
+  team: Types.ObjectId;
 }

@@ -1,6 +1,6 @@
 import { Response } from "express";
 
-interface IMeta {
+export interface IMeta {
   totalItem: number;
   totalPage: number;
   limit: number;

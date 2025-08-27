@@ -21,7 +21,7 @@ const TeamEmployeeSchema = new Schema<ITeamEmployee>(
 
 TeamEmployeeSchema.index({ employee: 1, team: 1 }, { unique: true });
 TeamEmployeeSchema.index({ employee: 1 }, { unique: true });
-
+TeamEmployeeSchema.index({ team: 1 });
 export const TeamEmployee = model<ITeamEmployee>(
   "TeamEmployee",
   TeamEmployeeSchema

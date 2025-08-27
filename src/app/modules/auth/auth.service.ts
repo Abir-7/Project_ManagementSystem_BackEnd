@@ -18,6 +18,7 @@ import { isTimeExpired } from "../../utils/helper/isTimeExpire";
 //import { publishJob } from "../../rabbitMq/publisher";
 import { TUserRole, userRoles } from "../../interface/auth.interface";
 import { SupervisorEmployee } from "../relational_table/employee_supervisor/employee_supervisor.model";
+import { SupervisorAdmin } from "../relational_table/supervisor_admin/admin_supervisor.model";
 
 const createUser = async (
   data: {
@@ -88,6 +89,12 @@ const createUser = async (
     if (data.role === "EMPLOYEE" && authRole === "SUPERVISOR") {
       await SupervisorEmployee.create(
         [{ employee: createdUser[0]._id, supervisor: userId }],
+        { session }
+      );
+    }
+    if (data.role === "SUPERVISOR" && authRole === "ADMIN") {
+      await SupervisorAdmin.create(
+        [{ admin: userId, supervisor: createdUser[0]._id }],
         { session }
       );
     }

@@ -5,7 +5,7 @@ import { DeliveryController } from "./delivery.controller";
 const router = Router();
 router.get(
   "/save-new-delivery-data",
-  auth("SUPERVISOR", "LEADER", "EMPLOYEE"),
+  auth("EMPLOYEE"),
   DeliveryController.savePhaseDeliveryData
 );
 

@@ -55,7 +55,7 @@ const getEmployeeListOfSupervisor = catchAsync(async (req, res) => {
     success: true,
     statusCode: status.OK,
     message: "Supervisor employee list data is fetched successfully",
-    data: result.simplifiedData,
+    data: result.data,
     meta: result.meta,
   });
 });
@@ -69,10 +69,28 @@ const getAllEmloyeeStatusList = catchAsync(async (req, res) => {
     data: result,
   });
 });
+const getSupervisorList = catchAsync(async (req, res) => {
+  const result = await UserService.getSupervisorList(
+    req.query.status as UserStatus,
+    req.user.userId,
+    req.query.searchTerm as string,
+    Number(req.query.page || 1),
+    Number(req.query.limit || 10)
+  );
+
+  sendResponse(res, {
+    success: true,
+    statusCode: status.OK,
+    message: "Supervisor list fetched successfully",
+    data: result.data,
+    meta: result.meta,
+  });
+});
 
 export const UserController = {
   updateUserStatusRole,
   getMyData,
   getEmployeeListOfSupervisor,
+  getSupervisorList,
   getAllEmloyeeStatusList,
 };
