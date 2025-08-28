@@ -39,7 +39,7 @@ router.get(
 
 router.post(
   "/add",
-  auth("SUPERVISOR", "LEADER"),
+  auth("LEADER"),
   zodValidator(ZodProjectSchema),
   ProjectController.addProject
 );
