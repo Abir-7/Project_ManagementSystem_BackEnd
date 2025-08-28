@@ -31,12 +31,17 @@ interface AddProjectInput {
   teamGrouplink?: string;
   status?: string;
   phases?: PhaseInput[];
-  teamId?: string;
 }
 
-const addProject = async (data: AddProjectInput) => {
+const addProject = async (data: AddProjectInput, userId: string) => {
   const session: ClientSession = await startSession();
   session.startTransaction();
+
+  const teamData = await TeamEmployee.findOne({ employee: userId });
+
+  if (!teamData) {
+    throw new Error("Team Data not found");
+  }
 
   try {
     // 1. Create project
@@ -71,19 +76,19 @@ const addProject = async (data: AddProjectInput) => {
     }
 
     // 3. Link team to project
-    if (data.teamId) {
-      const teamExists = await Team.exists({ _id: data.teamId }).session(
+    if (teamData.team) {
+      const teamExists = await Team.exists({ _id: teamData.team }).session(
         session
       );
 
       if (!teamExists) {
-        throw new Error(`Team with id ${data.teamId} not found`);
+        throw new Error(`Team with id ${teamData.team} not found`);
       }
 
       await TeamProject.create(
         [
           {
-            team: data.teamId,
+            team: teamData.team,
             project: projectId,
           },
         ],

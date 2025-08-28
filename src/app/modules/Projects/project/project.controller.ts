@@ -5,7 +5,7 @@ import { ProjectService } from "./project.service";
 import { IProjectStatus } from "./project.interface";
 
 const addProject = catchAsync(async (req, res) => {
-  const result = await ProjectService.addProject(req.body);
+  const result = await ProjectService.addProject(req.body, req.user.userId);
 
   sendResponse(res, {
     success: true,
