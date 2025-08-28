@@ -7,6 +7,7 @@ import { UserStatus } from "./user.interface";
 const updateUserStatusRole = catchAsync(async (req, res) => {
   const { role, status: userStatus, userId } = req.body;
   const result = await UserService.updateUserStatusRole(
+    req.user.userId,
     userId,
     userStatus,
     role,

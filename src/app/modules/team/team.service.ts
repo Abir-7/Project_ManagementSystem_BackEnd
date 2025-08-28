@@ -8,6 +8,7 @@ import { TeamSupervisor } from "../relational_table/team_supervisor/team.supervi
 import { TeamEmployee } from "../relational_table/team_employee/team_employee.model";
 import AppError from "../../errors/AppError";
 import { TUserRole, userRoles } from "../../interface/auth.interface";
+import { isThisEmployeeUnderThisSupervisor } from "../users/user/user.service";
 
 const createTeam = async (name: string, createdBy: string) => {
   const session = await mongoose.startSession();
@@ -31,6 +32,7 @@ const createTeam = async (name: string, createdBy: string) => {
     throw new Error(error);
   }
 };
+
 const assignEmployeeToTeam = async (
   userId: string,
   teamId: string,
@@ -67,6 +69,10 @@ const assignEmployeeToNewTeam = async (
   teamId: string,
   supervisorId: string
 ) => {
+  if (await isThisEmployeeUnderThisSupervisor(userId, supervisorId)) {
+    throw new AppError(404, "Employee not under you.");
+  }
+
   const isTrue = await isTeamUnderThisSupervisor(supervisorId, teamId);
   if (isTrue === false) {
     throw new AppError(404, "Team data of this supervisor not found.");

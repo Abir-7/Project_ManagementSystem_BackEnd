@@ -9,13 +9,18 @@ import { PipelineStage, Types } from "mongoose";
 import { UserStatus } from "./user.interface";
 import { SupervisorAdmin } from "../../relational_table/supervisor_admin/admin_supervisor.model";
 import { IMeta } from "../../../utils/serverTools/sendResponse";
+import { SupervisorEmployee } from "../../relational_table/employee_supervisor/employee_supervisor.model";
 
 const updateUserStatusRole = async (
+  authId: string,
   userId: string,
   userStatus?: UserStatus,
   userRole?: TUserRole,
   authRole?: TUserRole
 ) => {
+  if ((await isThisEmployeeUnderThisSupervisor(userId, authId)) === false) {
+    throw new Error("You can't change.");
+  }
   // Role-based permission check
   if (authRole !== "SUPERVISOR") {
     throw new Error("Unauthorized to update user status/role");
@@ -318,4 +323,22 @@ export const UserService = {
   getAllUserUnderASupervisor,
   getAllEmloyeeStatusList,
   getSupervisorList,
+};
+
+//!-------------------------HELPER---------------------!//
+
+export const isThisEmployeeUnderThisSupervisor = async (
+  employeeId: string,
+  supervisorId: string
+) => {
+  const data = await SupervisorEmployee.findOne({
+    employee: employeeId,
+    supervisor: supervisorId,
+  });
+
+  if (data) {
+    return true;
+  } else {
+    return false;
+  }
 };
