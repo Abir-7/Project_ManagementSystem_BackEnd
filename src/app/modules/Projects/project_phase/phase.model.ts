@@ -34,6 +34,10 @@ const ProjectPhaseSchema = new Schema<IProjectPhase>(
   }
 );
 
+ProjectPhaseSchema.index({ project: 1, status: 1 });
+ProjectPhaseSchema.index({ project: 1, deadline: 1 });
+ProjectPhaseSchema.index({ project: 1 });
+
 export const ProjectPhase = model<IProjectPhase>(
   "ProjectPhase",
   ProjectPhaseSchema

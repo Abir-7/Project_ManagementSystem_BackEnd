@@ -20,7 +20,7 @@ const TeamSupervisorSchema = new Schema<ITeamSupervisor>(
 );
 
 TeamSupervisorSchema.index({ supervisor: 1, team: 1 }, { unique: true });
-
+TeamSupervisorSchema.index({ supervisor: 1 });
 export const TeamSupervisor = model<ITeamSupervisor>(
   "TeamSupervisor",
   TeamSupervisorSchema

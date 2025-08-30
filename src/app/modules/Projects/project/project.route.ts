@@ -6,7 +6,26 @@ import { ZodProjectSchema } from "./project.validation";
 
 const router = Router();
 
+router.post(
+  "/add",
+  auth("LEADER"),
+  zodValidator(ZodProjectSchema),
+  ProjectController.addProject
+);
+
 router.get("/get-all", auth("SUPERVISOR"), ProjectController.getAllProject);
+
+router.get(
+  "/get-my-projects",
+  auth("SUPERVISOR", "LEADER", "EMPLOYEE"),
+  ProjectController.getMyProject
+);
+
+router.get(
+  "/get-my-team-projects",
+  auth("LEADER", "EMPLOYEE"),
+  ProjectController.getMyTeamProjects
+);
 
 router.get(
   "/get-single-project/:projectId",
@@ -23,25 +42,6 @@ router.patch(
   "/update-work-progress/:phaseId",
   auth("EMPLOYEE"),
   ProjectController.updateWorkProgress
-);
-
-router.get(
-  "/get-my-projects",
-  auth("SUPERVISOR", "LEADER", "EMPLOYEE"),
-  ProjectController.getMyProject
-);
-
-router.get(
-  "/get-my-team-projects",
-  auth("LEADER", "EMPLOYEE"),
-  ProjectController.getMyTeamProjects
-);
-
-router.post(
-  "/add",
-  auth("LEADER"),
-  zodValidator(ZodProjectSchema),
-  ProjectController.addProject
 );
 
 router.post(

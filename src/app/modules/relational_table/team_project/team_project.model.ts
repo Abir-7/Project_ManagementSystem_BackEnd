@@ -23,6 +23,7 @@ const TeamProjectSchema = new Schema<ITeamProject>(
 TeamProjectSchema.index({ team: 1, project: 1 }, { unique: true });
 
 TeamProjectSchema.index({ project: 1 }, { unique: true });
+TeamProjectSchema.index({ team: 1 });
 
 export const TeamProject = model<ITeamProject>(
   "TeamProject",
